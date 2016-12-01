@@ -32,7 +32,8 @@ site.settings
 
 site.includeScaladoc()
 
-site.jekyllSupport()
+// Re-enable if/when we want to support gh-pages w/ jekyll
+// site.jekyllSupport()
 
 ghpages.settings
 
