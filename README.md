@@ -1,6 +1,9 @@
 # isarn-sketches
 Sketching data structures
 
+### API documentation
+https://isarn.github.io/isarn-sketches/latest/api/
+
 ### How to use in your project
 
 #### sbt
