@@ -28,7 +28,7 @@ import org.isarnproject.sketches.TDigest
 scala> val data = Vector.fill(10000) { scala.util.Random.nextGaussian() }
 data: scala.collection.immutable.Vector[Double] = Vector(1.6046163970051968, 0.44151418924289004, ...
 
-scala> val sketch = TDigest.sketch(data);
+scala> val sketch = TDigest.sketch(data)
 sketch: org.isarnproject.sketches.TDigest = TDigest(0.5,70,TDigestMap(-3.6035923746624587 -> (1.0, 1.0), ...
 
 scala> sketch.cdf(0)
