@@ -16,8 +16,8 @@ def commonSettings = Seq(
     "org.isarnproject" %% "isarn-collections" % "0.0.1",
     "org.isarnproject" %% "isarn-algebird-algebra-api" % "0.0.1" % Test,
     "org.isarnproject" %% "isarn-scalatest" % "0.0.1" % Test,
-    "org.scalatest" %% "scalatest" % "2.2.4" % Test
-  )
+    "org.scalatest" %% "scalatest" % "2.2.4" % Test,
+    "org.apache.commons" % "commons-math3" % "3.6.1" % Test)
 )
 
 seq(commonSettings:_*)
