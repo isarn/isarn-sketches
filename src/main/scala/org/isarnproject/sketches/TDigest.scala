@@ -23,6 +23,17 @@ import tdmap.TDigestMap
  * Computing Extremely Accurate Quantiles Using t-Digests,
  * Ted Dunning and Otmar Ertl,
  * https://github.com/tdunning/t-digest/blob/master/docs/t-digest-paper/histo.pdf
+ *
+ * {{{
+ * import org.isarnproject.sketches.TDigest
+ * val data = Vector.fill(10000) { scala.util.Random.nextGaussian() }
+ * // sketch of some Gaussian data
+ * val sketch = TDigest.sketch(data)
+ * // the cumulative distribution function of the sketch; cdf(x) at x = 0
+ * val cdf = sketch.cdf(0.0)
+ * // inverse of the CDF, evaluated at q = 0.5
+ * val cdfi = sketch.cdfInverse(0.5)
+ * }}}
  */
 case class TDigest(
   delta: Double,
