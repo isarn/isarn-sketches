@@ -230,7 +230,8 @@ object TDigest {
       val d = rtd.clusters.asInstanceOf[tdmap.tree.INodeTD].data
       ltd + ((d.key, d.value))
     } else {
-      shuffle(ltd.clusters.toVector ++ rtd.clusters.toVector)
+      // insert clusters from largest to smallest
+      (ltd.clusters.toVector ++ rtd.clusters.toVector).sortWith((a, b) => a._2 > b._2)
         .foldLeft(TDigest.empty(delta))((d, e) => d + e)
     }
   }
