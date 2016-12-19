@@ -13,7 +13,7 @@ isarn-sketches can operate with [Algebird](https://twitter.github.io/algebird/) 
 ``` scala
 resolvers += "isarn project" at "https://dl.bintray.com/isarn/maven/"
 
-libraryDependencies += "org.isarnproject" %% "isarn-sketches" % "0.0.1"
+libraryDependencies += "org.isarnproject" %% "isarn-sketches" % "0.0.2"
 ```
 
 #### maven
