@@ -45,5 +45,5 @@ res1: Double = 0.0038481195948969205
 ```
 
 #### t-digest resources
-Original paper: [Computing Extremely Accurate Quantiles Using t-Digests](https://github.com/tdunning/t-digest/blob/master/docs/t-digest-paper/histo.pdf)
-Video Talk: [Sketching Data with T-Digest In Apache Spark](https://youtu.be/ETUYhEZRtWE)
+* Original paper: [Computing Extremely Accurate Quantiles Using t-Digests](https://github.com/tdunning/t-digest/blob/master/docs/t-digest-paper/histo.pdf)
+* Video Talk: [Sketching Data with T-Digest In Apache Spark](https://youtu.be/ETUYhEZRtWE)
