@@ -37,6 +37,7 @@ import tdmap.TDigestMap
  */
 case class TDigest(
   delta: Double,
+  maxDiscrete: Int,
   nclusters: Int,
   clusters: TDigestMap) extends Serializable {
 
@@ -63,22 +64,27 @@ case class TDigest(
    * https://github.com/tdunning/t-digest/blob/master/docs/t-digest-paper/histo.pdf
    */
   def +[N1, N2](xw: (N1, N2))(implicit num1: Numeric[N1], num2: Numeric[N2]): TDigest = {
-    val s = this.update(xw)
-    if (s.nclusters <= R) s
-    else {
-      // too many clusters: attempt to compress it by re-clustering
-      val ds = TDigest.shuffle(s.clusters.toVector)
-      ds.foldLeft(TDigest.empty(delta))((d, e) => d.update(e))
+    if (nclusters <= maxDiscrete) {
+      val (x, w) = (num1.toDouble(xw._1), num2.toDouble(xw._2))
+      val ncNew = nclusters + (if (clusters.contains(x)) 0 else 1)
+      TDigest(delta, maxDiscrete, ncNew, clusters.increment(x, w))
+    } else {
+      val s = this.update(xw)
+      if (s.nclusters <= R) s
+      else {
+        // too many clusters: attempt to compress it by re-clustering
+        val ds = TDigest.shuffle(s.clusters.toVector)
+        ds.foldLeft(TDigest.empty(delta))((d, e) => d.update(e))
+      }
     }
   }
 
   /**
    * Add this digest to another
    * @param that The right-hand t-digest operand
-   * @return the sum of left and right digests, as defined by TDigestSemigroup
-   * @see TDigestSemigroup
+   * @return the result of combining left and right digests
    */
-  def ++(that: TDigest): TDigest = TDigest.combine(this, that, this.delta)
+  def ++(that: TDigest): TDigest = TDigest.combine(this, that, this.delta, this.maxDiscrete)
 
   // This is most of 'algorithm 1', except for re-clustering which is factored out to avoid
   // recursive calls during a reclustering phase
@@ -96,7 +102,7 @@ case class TDigest(
 
     if (near.isEmpty) {
       // our map is empty, so insert this pair as the first cluster
-      TDigest(delta, nclusters + 1, clusters + ((xn, wn)))
+      TDigest(delta, maxDiscrete, nclusters + 1, clusters + ((xn, wn)))
     } else {
       // compute upper bounds for cluster masses, from their quantile estimates
       var massPS = clusters.prefixSum(near.head._1, open = true)
@@ -141,7 +147,7 @@ case class TDigest(
       val nc = nclusters - s.length + cmNew.length
 
       // return the updated t-digest
-      TDigest(delta, nc, clustNew)
+      TDigest(delta, maxDiscrete, nc, clustNew)
     }
   }
 
@@ -191,9 +197,10 @@ object TDigest {
    * @note Smaller values of delta yield sketches with more clusters, and higher resolution
    * @note The expected number of clusters will vary (roughly) as (50/delta)
    */
-  def empty(delta: Double = deltaDefault): TDigest = {
+  def empty(delta: Double = deltaDefault, maxDiscrete: Int = 0): TDigest = {
     require(delta > 0.0, s"delta was not > 0")
-    TDigest(delta, 0, TDigestMap.empty)
+    require(maxDiscrete >= 0, s"maxDiscrete was not >= 0")
+    TDigest(delta, maxDiscrete, 0, TDigestMap.empty)
   }
 
   /**
@@ -206,9 +213,11 @@ object TDigest {
    */
   def sketch[N](
     data: TraversableOnce[N],
-    delta: Double = deltaDefault)(implicit num: Numeric[N]): TDigest = {
+    delta: Double = deltaDefault)(implicit num: Numeric[N],
+    maxDiscrete: Int = 0): TDigest = {
     require(delta > 0.0, s"delta was not > 0")
-    val td = data.foldLeft(empty(delta))((c, e) => c + ((e, 1)))
+    require(maxDiscrete >= 0, s"maxDiscrete was not >= 0")
+    val td = data.foldLeft(empty(delta, maxDiscrete))((c, e) => c + ((e, 1)))
     TDigest.shuffle(td.clusters.toVector).foldLeft(empty(delta))((c, e) => c + e)
   }
 
@@ -221,8 +230,10 @@ object TDigest {
    * that it is only "statistically" associative: d1++(d2++d3) will be statistically
    * similar to (d1++d2)++d3, but rarely identical.
    */
-  def combine(ltd: TDigest, rtd: TDigest, delta: Double = deltaDefault): TDigest = {
-    if (ltd.nclusters <= 1 && rtd.nclusters > 1) combine(rtd, ltd, delta)
+  def combine(ltd: TDigest, rtd: TDigest,
+      delta: Double = deltaDefault,
+      maxDiscrete: Int = 0): TDigest = {
+    if (ltd.nclusters <= 1 && rtd.nclusters > 1) combine(rtd, ltd, delta, maxDiscrete)
     else if (rtd.nclusters == 0) ltd
     else if (rtd.nclusters == 1) {
       // handle the singleton RHS case specially to prevent quadratic catastrophe when
@@ -232,7 +243,7 @@ object TDigest {
     } else {
       // insert clusters from largest to smallest
       (ltd.clusters.toVector ++ rtd.clusters.toVector).sortWith((a, b) => a._2 > b._2)
-        .foldLeft(TDigest.empty(delta))((d, e) => d + e)
+        .foldLeft(empty(delta, maxDiscrete))((d, e) => d + e)
     }
   }
 
