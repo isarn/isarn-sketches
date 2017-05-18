@@ -74,7 +74,7 @@ case class TDigest(
       else {
         // too many clusters: attempt to compress it by re-clustering
         val ds = TDigest.shuffle(s.clusters.toVector)
-        ds.foldLeft(TDigest.empty(delta))((d, e) => d.update(e))
+        ds.foldLeft(TDigest.empty(delta, maxDiscrete))((d, e) => d.update(e))
       }
     }
   }
@@ -213,12 +213,12 @@ object TDigest {
    */
   def sketch[N](
     data: TraversableOnce[N],
-    delta: Double = deltaDefault)(implicit num: Numeric[N],
-    maxDiscrete: Int = 0): TDigest = {
+    delta: Double = deltaDefault,
+    maxDiscrete: Int = 0)(implicit num: Numeric[N]): TDigest = {
     require(delta > 0.0, s"delta was not > 0")
     require(maxDiscrete >= 0, s"maxDiscrete was not >= 0")
     val td = data.foldLeft(empty(delta, maxDiscrete))((c, e) => c + ((e, 1)))
-    TDigest.shuffle(td.clusters.toVector).foldLeft(empty(delta))((c, e) => c + e)
+    TDigest.shuffle(td.clusters.toVector).foldLeft(empty(delta, maxDiscrete))((c, e) => c + e)
   }
 
   /**
