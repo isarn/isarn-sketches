@@ -86,6 +86,38 @@ class TDigestTest extends FlatSpec with Matchers {
     testTDvsDist(td1 ++ td2, dist, math.sqrt(dist.getNumericalVariance())) should be (true)
   }
 
+  it should "respect maxDiscrete parameter" in {
+    import org.apache.commons.math3.distribution.GeometricDistribution
+    val gd = new GeometricDistribution(0.33)
+    val data = gd.sample(1000000)
+    val dataUniq = data.distinct.sorted
+    val kt = dataUniq.map(_.toDouble).toSet
+    val td = TDigest.sketch(data, maxDiscrete = 50)
+    val clust = td.clusters
+    val n = data.size.toDouble
+    clust.keys.toSet should be (kt)
+    val D = clust.prefixSums().map(_ / n)
+      .zip(dataUniq.map { k => gd.cumulativeProbability(k) })
+      .map { case (p1, p2) => math.abs(p1 - p2) }
+      .max
+    (D <= 0.01) should be (true)
+  }
+
+  it should "respect maxDiscrete parameter over ++" in {
+    import org.apache.commons.math3.distribution.GeometricDistribution
+    val gd = new GeometricDistribution(0.33)
+    val tdvec = Vector.fill(10) { TDigest.sketch(gd.sample(100000), maxDiscrete = 50) }
+    val td = tdvec.reduce(_ ++ _)
+    val clust = td.clusters
+    clust.keys.map(_.toInt).map(_.toDouble) should beEqSeq(clust.keys)
+    val n = clust.prefixSum(clust.keyMax.get)
+    val D = clust.prefixSums().map(_ / n)
+      .zip(clust.keys.map(_.toInt).map { k => gd.cumulativeProbability(k) })
+      .map { case (p1, p2) => math.abs(p1 - p2) }
+      .max
+    (D <= 0.01) should be (true)
+  }
+
   it should "serialize and deserialize" in {
     import org.apache.commons.math3.distribution.NormalDistribution
 
