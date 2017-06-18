@@ -116,9 +116,8 @@ class TDigestTest extends FlatSpec with Matchers {
     val kt = dataUniq.map(_.toDouble).toSet
     val td = TDigest.sketch(data, maxDiscrete = 50)
     val clust = td.clusters
-    val n = data.size.toDouble
     clust.keys.toSet should be (kt)
-    val D = clust.prefixSums().map(_ / n)
+    val D = clust.keys.map { x => td.cdfDiscrete(x) }
       .zip(dataUniq.map { k => gd.cumulativeProbability(k) })
       .map { case (p1, p2) => math.abs(p1 - p2) }
       .max
@@ -133,8 +132,7 @@ class TDigestTest extends FlatSpec with Matchers {
     val td = tdvec.reduce(_ ++ _)
     val clust = td.clusters
     clust.keys.map(_.toInt).map(_.toDouble) should beEqSeq(clust.keys)
-    val n = clust.prefixSum(clust.keyMax.get)
-    val D = clust.prefixSums().map(_ / n)
+    val D = clust.keys.map { x => td.cdfDiscrete(x) }
       .zip(clust.keys.map(_.toInt).map { k => gd.cumulativeProbability(k) })
       .map { case (p1, p2) => math.abs(p1 - p2) }
       .max
