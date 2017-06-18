@@ -24,6 +24,7 @@ case class Test(t: Int) extends Serializable
 
 class TDigestTest extends FlatSpec with Matchers {
   import org.apache.commons.math3.distribution.RealDistribution
+  import org.apache.commons.math3.distribution.IntegerDistribution
 
   val seed = 235711L
   scala.util.Random.setSeed(seed)
@@ -49,12 +50,33 @@ class TDigestTest extends FlatSpec with Matchers {
     pass
   }
 
+  def testSamplingPDF(td: TDigest, dist: RealDistribution): Boolean = {
+    val tdSamples = Array.fill(10000) { td.samplePDF }
+    val distSamples = Array.fill(10000) { dist.sample }
+    val kst = new org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest()
+    val d = kst.kolmogorovSmirnovStatistic(tdSamples, distSamples)
+    val pass = d <= maxD
+    if (!pass) Console.err.println(s"testSamplingPDF failure: d= $d")
+    pass
+  }
+
+  def testSamplingPMF(td: TDigest, dist: IntegerDistribution): Boolean = {
+    td.nclusters should be <=(td.maxDiscrete)
+    val tdSamples = Array.fill(10000) { td.samplePMF }
+    val distSamples = Array.fill(10000) { dist.sample.toDouble }
+    val kst = new org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest()
+    val d = kst.kolmogorovSmirnovStatistic(tdSamples, distSamples)
+    val pass = d <= maxD
+    if (!pass) Console.err.println(s"testSamplingPDF failure: d= $d")
+    pass
+  }
+
   def testDistribution(dist: RealDistribution, stdv: Double): Boolean = {
     dist.reseedRandomGenerator(seed)
 
     val td = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
 
-    testTDvsDist(td, dist, stdv)
+    testTDvsDist(td, dist, stdv) && testSamplingPDF(td, dist)
   }
 
   it should "sketch a uniform distribution" in {
@@ -101,6 +123,7 @@ class TDigestTest extends FlatSpec with Matchers {
       .map { case (p1, p2) => math.abs(p1 - p2) }
       .max
     (D <= 0.01) should be (true)
+    testSamplingPMF(td, gd) should be (true)
   }
 
   it should "respect maxDiscrete parameter over ++" in {
@@ -116,6 +139,7 @@ class TDigestTest extends FlatSpec with Matchers {
       .map { case (p1, p2) => math.abs(p1 - p2) }
       .max
     (D <= 0.01) should be (true)
+    testSamplingPMF(td, gd) should be (true)
   }
 
   it should "serialize and deserialize" in {
