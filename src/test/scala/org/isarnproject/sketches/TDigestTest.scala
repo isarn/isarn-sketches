@@ -24,6 +24,7 @@ case class Test(t: Int) extends Serializable
 
 class TDigestTest extends FlatSpec with Matchers {
   import org.apache.commons.math3.distribution.RealDistribution
+  import org.apache.commons.math3.distribution.IntegerDistribution
 
   val seed = 235711L
   scala.util.Random.setSeed(seed)
@@ -49,12 +50,33 @@ class TDigestTest extends FlatSpec with Matchers {
     pass
   }
 
+  def testSamplingPDF(td: TDigest, dist: RealDistribution): Boolean = {
+    val tdSamples = Array.fill(10000) { td.samplePDF }
+    val distSamples = Array.fill(10000) { dist.sample }
+    val kst = new org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest()
+    val d = kst.kolmogorovSmirnovStatistic(tdSamples, distSamples)
+    val pass = d <= maxD
+    if (!pass) Console.err.println(s"testSamplingPDF failure: d= $d")
+    pass
+  }
+
+  def testSamplingPMF(td: TDigest, dist: IntegerDistribution): Boolean = {
+    td.nclusters should be <=(td.maxDiscrete)
+    val tdSamples = Array.fill(10000) { td.samplePMF }
+    val distSamples = Array.fill(10000) { dist.sample.toDouble }
+    val kst = new org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest()
+    val d = kst.kolmogorovSmirnovStatistic(tdSamples, distSamples)
+    val pass = d <= maxD
+    if (!pass) Console.err.println(s"testSamplingPDF failure: d= $d")
+    pass
+  }
+
   def testDistribution(dist: RealDistribution, stdv: Double): Boolean = {
     dist.reseedRandomGenerator(seed)
 
     val td = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
 
-    testTDvsDist(td, dist, stdv)
+    testTDvsDist(td, dist, stdv) && testSamplingPDF(td, dist)
   }
 
   it should "sketch a uniform distribution" in {
@@ -84,6 +106,38 @@ class TDigestTest extends FlatSpec with Matchers {
     val td2 = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
 
     testTDvsDist(td1 ++ td2, dist, math.sqrt(dist.getNumericalVariance())) should be (true)
+  }
+
+  it should "respect maxDiscrete parameter" in {
+    import org.apache.commons.math3.distribution.GeometricDistribution
+    val gd = new GeometricDistribution(0.33)
+    val data = gd.sample(1000000)
+    val dataUniq = data.distinct.sorted
+    val kt = dataUniq.map(_.toDouble).toSet
+    val td = TDigest.sketch(data, maxDiscrete = 50)
+    val clust = td.clusters
+    clust.keys.toSet should be (kt)
+    val D = clust.keys.map { x => td.cdfDiscrete(x) }
+      .zip(dataUniq.map { k => gd.cumulativeProbability(k) })
+      .map { case (p1, p2) => math.abs(p1 - p2) }
+      .max
+    (D <= 0.01) should be (true)
+    testSamplingPMF(td, gd) should be (true)
+  }
+
+  it should "respect maxDiscrete parameter over ++" in {
+    import org.apache.commons.math3.distribution.GeometricDistribution
+    val gd = new GeometricDistribution(0.33)
+    val tdvec = Vector.fill(10) { TDigest.sketch(gd.sample(100000), maxDiscrete = 50) }
+    val td = tdvec.reduce(_ ++ _)
+    val clust = td.clusters
+    clust.keys.map(_.toInt).map(_.toDouble) should beEqSeq(clust.keys)
+    val D = clust.keys.map { x => td.cdfDiscrete(x) }
+      .zip(clust.keys.map(_.toInt).map { k => gd.cumulativeProbability(k) })
+      .map { case (p1, p2) => math.abs(p1 - p2) }
+      .max
+    (D <= 0.01) should be (true)
+    testSamplingPMF(td, gd) should be (true)
   }
 
   it should "serialize and deserialize" in {
