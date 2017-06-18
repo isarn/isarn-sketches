@@ -47,12 +47,22 @@ object tree {
     final def mCover(m: Double) = mcov(m, 0.0, Cover[INodeTD](None, None))
 
     private[tree] def mcov(m: Double, psum: Double, cov: Cover[INodeTD]): Cover[INodeTD]
+
+    final def keyPFSLUB(m: Double) = this match {
+      case _: LNodeTD => Double.NaN
+      case _ if (m < 0.0 || m > this.pfs) => Double.NaN
+      case _ if (m == 0.0) => this.nodeMin.get.asInstanceOf[INodeTD].data.key
+      case _ => this.kpl(m, 0.0)
+    }
+
+    private[tree] def kpl(m: Double, psum: Double): Double
   }
 
   trait LNodeTD extends NodeTD
     with LNodePS[Double, Double, Double] with LNodeInc[Double, Double]
     with LNodeNearMap[Double, Double] {
     final def mcov(m: Double, psum: Double, cov: Cover[INodeTD]) = cov
+    final def kpl(m: Double, psum: Double) = Double.NaN
   }
 
   trait INodeTD extends NodeTD
@@ -77,6 +87,18 @@ object tree {
             case _ => cov.copy(r = Some(this))
           }
         }
+      }
+    }
+
+    final def kpl(m: Double, psum: Double) = {
+      val lb = psum + lsub.pfs
+      val ub = lb + data.value
+      if (m > ub) {
+        rsub.kpl(m, ub)
+      } else if (m > lb) {
+        data.key
+      } else {
+        lsub.kpl(m, psum)
       }
     }
   }
@@ -168,6 +190,18 @@ sealed trait TDigestMap extends SortedMap[Double, Double] with NodeTD
       case Cover(Some(_), None) => 1.0
       case _ => 0.0
     }
+  }
+
+  def cdfDiscrete[N](xx: N)(implicit num: Numeric[N]) = {
+    if (this.isEmpty) 0.0 else {
+      val x = num.toDouble(xx)
+      this.prefixSum(x) / this.sum
+    }
+  }
+
+  def cdfDiscreteInverse[N](qq: N)(implicit num: Numeric[N]) = {
+    val q = num.toDouble(qq)
+    keyPFSLUB(q * this.sum)
   }
 
   /**
