@@ -16,6 +16,8 @@ limitations under the License.
 
 package org.isarnproject.sketches
 
+import scala.util.Random
+
 import tdmap.TDigestMap
 
 /**
@@ -166,6 +168,51 @@ case class TDigest(
    * @return the value x such that cdf(x) = q
    */
   def cdfInverse[N](q: N)(implicit num: Numeric[N]): Double = clusters.cdfInverse(q)
+
+  /**
+   * Compute a cumulative probability (CDF) for a numeric value, from the estimated probability
+   * distribution represented by this t-digest sketch, assuming sketch is "discrete"
+   * (e.g. if number of clusters <= maxDiscrete setting)
+   * @param x a numeric value
+   * @return the cumulative probability that a random sample from the distribution is <= x
+   */
+  def cdfDiscrete[N](x: N)(implicit num: Numeric[N]): Double =
+    clusters.cdfDiscrete(x)
+
+  /**
+   * Compute the inverse cumulative probability (inverse-CDF) for a quantile value, from the
+   * estimated probability distribution represented by this t-digest sketch,
+   * assuming the sketch is "discrete" (e.g. if number of clusters <= maxDiscrete setting)
+   * @param q a quantile value.  The value of q is expected to be on interval [0, 1]
+   * @return the smallest value x such that q <= cdf(x)
+   */
+  def cdfDiscreteInverse[N](q: N)(implicit num: Numeric[N]): Double =
+    clusters.cdfDiscreteInverse(q)
+
+  /**
+   * Perform a random sampling from the distribution as sketched by this t-digest, in
+   * "probability density" mode.
+   * @return A random number sampled from the sketched distribution
+   * @note uses the inverse transform sampling method
+   */
+  def samplePDF: Double = clusters.cdfInverse(Random.nextDouble)
+
+  /**
+   * Perform a random sampling from the distribution as sketched by this t-digest, in
+   * "probability mass" (i.e. discrete) mode.
+   * @return A random number sampled from the sketched distribution
+   * @note uses the inverse transform sampling method
+   */
+  def samplePMF: Double = clusters.cdfDiscreteInverse(Random.nextDouble)
+
+  /**
+   * Perform a random sampling from the distribution as sketched by this t-digest,
+   * using "discrete" (PMF) mode if the number of clusters <= maxDiscrete setting,
+   * and "density" (PDF) mode otherwise.
+   * @return A random number sampled from the sketched distribution
+   * @note uses the inverse transform sampling method
+   */
+  def sample: Double = if (nclusters <= maxDiscrete) samplePMF else samplePDF
 }
 
 /** Factory functions for TDigest */
