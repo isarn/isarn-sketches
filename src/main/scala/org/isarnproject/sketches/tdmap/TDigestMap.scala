@@ -56,6 +56,10 @@ object tree {
     }
 
     private[tree] def kpl(m: Double, psum: Double): Double
+
+    final def nearTD(x: Double): (Double, Double, Double) = ntd(x, 0.0)
+
+    private[tree] def ntd(x: Double, psum: Double): (Double, Double, Double)
   }
 
   trait LNodeTD extends NodeTD
@@ -63,6 +67,7 @@ object tree {
     with LNodeNearMap[Double, Double] {
     final def mcov(m: Double, psum: Double, cov: Cover[INodeTD]) = cov
     final def kpl(m: Double, psum: Double) = Double.NaN
+    final def ntd(x: Double, psum: Double) = (Double.NaN, Double.NaN, Double.NaN)
   }
 
   trait INodeTD extends NodeTD
@@ -100,6 +105,40 @@ object tree {
       } else {
         lsub.kpl(m, psum)
       }
+    }
+
+    final def ntd(x: Double, psum: Double) = {
+      if (x < data.key) {
+        lsub match {
+          case ls: INodeTD => {
+            if (x <= ls.kmax) ls.ntd(x, psum)
+            else {
+              val (dk, ldk) = (math.abs(x - data.key), math.abs(x - ls.kmax))
+              if (dk <= ldk) (data.key, data.value, psum + lsub.pfs)
+              else {
+                val n = ls.node(ls.kmax).get.asInstanceOf[INodeTD]
+                (n.data.key, n.data.value, psum + lsub.pfs - n.data.value)
+              }
+            }
+          }
+          case _ => (data.key, data.value, psum + lsub.pfs)
+        }
+      } else if (x > data.key) {
+        rsub match {
+          case rs: INodeTD => {
+            if (x >= rs.kmin) rs.ntd(x, psum + lsub.pfs + data.value)
+            else {
+              val (dk, rdk) = (math.abs(x - data.key), math.abs(x - rs.kmin))
+              if (dk <= rdk) (data.key, data.value, psum + lsub.pfs)
+              else {
+                val n = rs.node(rs.kmin).get.asInstanceOf[INodeTD]
+                (n.data.key, n.data.value, psum + lsub.pfs + data.value)
+              }
+            }
+          }
+          case _ => (data.key, data.value, psum + lsub.pfs)
+        }
+      } else (data.key, data.value, psum + lsub.pfs)
     }
   }
 }
