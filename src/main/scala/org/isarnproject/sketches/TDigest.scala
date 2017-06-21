@@ -235,7 +235,7 @@ object TDigest {
     maxDiscrete: Int = 0)(implicit num: Numeric[N]): TDigest = {
     require(delta > 0.0, s"delta was not > 0")
     require(maxDiscrete >= 0, s"maxDiscrete was not >= 0")
-    val td = data.foldLeft(empty(delta, maxDiscrete))((c, e) => c + ((e, 1)))
+    val td = data.foldLeft(empty(delta, maxDiscrete))((c, e) => c + e)
     TDigest.shuffle(td.clusters.toVector).foldLeft(empty(delta, maxDiscrete))((c, e) => c + e)
   }
 
