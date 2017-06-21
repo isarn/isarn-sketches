@@ -46,8 +46,6 @@ case class TDigest(
   // re-cluster when number of clusters exceeds this threshold
   private val R = (TDigest.K / delta).toInt
 
-  private case class Cluster(centroid: Double, mass: Double, massUB: Double)
-
   /**
    * Returns a new t-digest with value x included in its sketch; td + x is equivalent to
    * td + (x, 1).
