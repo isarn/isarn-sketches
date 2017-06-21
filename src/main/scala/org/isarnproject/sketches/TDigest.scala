@@ -95,7 +95,7 @@ case class TDigest(
   private def update(x: Double, w: Double) = {
     require(w > 0.0, "data weight must be > 0")
 
-    if (clusters.isEmpty) {
+    if (nclusters == 0) {
       // our map is empty, so insert this pair as the first cluster
       TDigest(delta, maxDiscrete, nclusters + 1, clusters + (x -> w))
     } else {
