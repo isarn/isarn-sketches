@@ -27,6 +27,9 @@ import org.isarnproject.collections.mixmaps.prefixsum._
 import org.isarnproject.collections.mixmaps.nearest._
 
 object tree {
+  import org.isarnproject.collections.mixmaps.redblack.tree._
+  import org.isarnproject.collections.mixmaps.ordered._
+  import org.isarnproject.collections.mixmaps.ordered.tree.DataMap
   import org.isarnproject.collections.mixmaps.increment.tree._
   import org.isarnproject.collections.mixmaps.prefixsum.tree._
   import org.isarnproject.collections.mixmaps.nearest.tree._
@@ -60,6 +63,8 @@ object tree {
     final def nearTD(x: Double): (Double, Double, Double) = ntd(x, 0.0)
 
     private[tree] def ntd(x: Double, psum: Double): (Double, Double, Double)
+
+    def upd(x0: Double, x: Double, m: Double): Node[Double]
   }
 
   trait LNodeTD extends NodeTD
@@ -68,6 +73,8 @@ object tree {
     final def mcov(m: Double, psum: Double, cov: Cover[INodeTD]) = cov
     final def kpl(m: Double, psum: Double) = Double.NaN
     final def ntd(x: Double, psum: Double) = (Double.NaN, Double.NaN, Double.NaN)
+    final def upd(x0: Double, x: Double, m: Double) =
+      throw new Exception("If this exception threw, there is a bug in this code")
   }
 
   trait INodeTD extends NodeTD
@@ -140,6 +147,31 @@ object tree {
         }
       } else (data.key, data.value, psum + lsub.pfs)
     }
+
+    final def upd(x0: Double, x: Double, m: Double) =
+      if (color == R) {
+        if (x0 < data.key) rNode(data, lsub.upd(x0, x, m), rsub)
+        else if (x0 > data.key) rNode(data, lsub, rsub.upd(x0, x, m))
+        else {
+          val d = new DataMap[Double, Double] {
+            val key = x
+            val value = m
+          }
+          rNode(d, lsub, rsub)
+        }
+      } else {
+        // We know we are directly replacing a node, so no need to call balance()
+        // in the case of black nodes. This is quite a bit faster. \o/
+        if (x0 < data.key) bNode(data, lsub.upd(x0, x, m), rsub)
+        else if (x0 > data.key) bNode(data, lsub, rsub.upd(x0, x, m))
+        else {
+          val d = new DataMap[Double, Double] {
+            val key = x
+            val value = m
+          }
+          bNode(d, lsub, rsub)
+        }
+      }
   }
 }
 
@@ -217,6 +249,9 @@ sealed trait TDigestMap extends SortedMap[Double, Double] with NodeTD
     val m2 = m1 + (tm1 - d1) + (if (c2 == this.keyMax.get) tm2 else tm2 / 2.0)
     (m1, m2)
   }
+
+  def update(x0: Double, x: Double, m: Double): TDigestMap =
+    this.upd(x0, x, m).asInstanceOf[TDigestMap]
 
   /** Compute the CDF for a value, using piece-wise linear between clusters */
   def cdf[N](xx: N)(implicit num: Numeric[N]) = {

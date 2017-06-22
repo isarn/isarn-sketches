@@ -113,7 +113,7 @@ case class TDigest(
         val tClust = if (dm > 0.0) {
           val nm = m + dm
           val dc = dm * (x - c) / nm
-          (clusters - c) + ((c + dc) -> nm)
+          clusters.update(c, c + dc, nm)
         } else clusters
 
         val uClust = if (rm > 0.0) tClust + (x -> rm) else tClust
