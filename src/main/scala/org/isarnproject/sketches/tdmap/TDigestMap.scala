@@ -1,5 +1,5 @@
 /*
-Copyright 2016 Erik Erlandson
+Copyright 2016-2017 Erik Erlandson
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -51,20 +51,26 @@ object tree {
 
     private[tree] def mcov(m: Double, psum: Double, cov: Cover[INodeTD]): Cover[INodeTD]
 
-    final def keyPFSLUB(m: Double) = this match {
+    // Find the cluster whose prefix sum is the least upper bound of mass 'm'
+    // domain specific to t-digest algorithms
+    private[sketches] final def keyPFSLUB(m: Double) = this match {
       case _: LNodeTD => Double.NaN
       case _ if (m < 0.0 || m > this.pfs) => Double.NaN
       case _ if (m == 0.0) => this.nodeMin.get.asInstanceOf[INodeTD].data.key
       case _ => this.kpl(m, 0.0)
     }
 
+    // recursive implementation of keyPFSLUB
     private[tree] def kpl(m: Double, psum: Double): Double
 
-    final def nearTD(x: Double): (Double, Double, Double) = ntd(x, 0.0)
+    // obtains the nearest cluster to 'x'.  Returns the cluster (location, mass, prefix-sum)
+    private[sketches] final def nearTD(x: Double): (Double, Double, Double) = ntd(x, 0.0)
 
+    // recursive implementation for nearTD
     private[tree] def ntd(x: Double, psum: Double): (Double, Double, Double)
 
-    def upd(x0: Double, x: Double, m: Double): Node[Double]
+    // recursive implementation of 'update' method
+    private[tdmap] def upd(x0: Double, x: Double, m: Double): Node[Double]
   }
 
   trait LNodeTD extends NodeTD
@@ -250,7 +256,13 @@ sealed trait TDigestMap extends SortedMap[Double, Double] with NodeTD
     (m1, m2)
   }
 
-  def update(x0: Double, x: Double, m: Double): TDigestMap =
+  // This updates an existing cluster with a new location and mass.  It does this
+  // efficiently by taking advantage of the knowledge that (a) this kind of update
+  // never changes the key ordering, and therefore that (b) this operation can
+  // always directly replace an existing node, without otherwise changing the topology
+  // of the tree.  Clearly, this is a domain-dependent method, and not exposed to the
+  // public API
+  private[sketches] def update(x0: Double, x: Double, m: Double): TDigestMap =
     this.upd(x0, x, m).asInstanceOf[TDigestMap]
 
   /** Compute the CDF for a value, using piece-wise linear between clusters */
