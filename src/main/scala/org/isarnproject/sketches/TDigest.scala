@@ -68,8 +68,11 @@ case class TDigest(
 
   private def plus(x: Double, w: Double): TDigest = {
     if (nclusters <= maxDiscrete) {
-      val ncNew = nclusters + (if (clusters.contains(x)) 0 else 1)
-      TDigest(delta, maxDiscrete, ncNew, clusters.increment(x, w))
+      clusters.getNode(x).fold {
+        TDigest(delta, maxDiscrete, nclusters + 1, clusters + (x -> w))
+      } { xnode =>
+        TDigest(delta, maxDiscrete, nclusters, clusters.update(x, x, xnode.data.value + w))
+      }
     } else {
       val s = this.update(x, w)
       if (s.nclusters <= R) s
@@ -101,7 +104,7 @@ case class TDigest(
       val (c, m, psum) = clusters.nearTD(x)
       if (x == c) {
         // data landed on an existing cluster: increment that cluster's mass directly
-        TDigest(delta, maxDiscrete, nclusters, clusters.increment(c, w))
+        TDigest(delta, maxDiscrete, nclusters, clusters.update(c, c, m + w))
       } else {
         val M = clusters.sum
         val q = (psum + m / 2.0) / M
