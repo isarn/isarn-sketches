@@ -1,5 +1,5 @@
 /*
-Copyright 2016 Erik Erlandson
+Copyright 2016-2017 Erik Erlandson
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -27,6 +27,9 @@ import org.isarnproject.collections.mixmaps.prefixsum._
 import org.isarnproject.collections.mixmaps.nearest._
 
 object tree {
+  import org.isarnproject.collections.mixmaps.redblack.tree._
+  import org.isarnproject.collections.mixmaps.ordered._
+  import org.isarnproject.collections.mixmaps.ordered.tree.DataMap
   import org.isarnproject.collections.mixmaps.increment.tree._
   import org.isarnproject.collections.mixmaps.prefixsum.tree._
   import org.isarnproject.collections.mixmaps.nearest.tree._
@@ -48,14 +51,26 @@ object tree {
 
     private[tree] def mcov(m: Double, psum: Double, cov: Cover[INodeTD]): Cover[INodeTD]
 
-    final def keyPFSLUB(m: Double) = this match {
+    // Find the cluster whose prefix sum is the least upper bound of mass 'm'
+    // domain specific to t-digest algorithms
+    private[sketches] final def keyPFSLUB(m: Double) = this match {
       case _: LNodeTD => Double.NaN
       case _ if (m < 0.0 || m > this.pfs) => Double.NaN
       case _ if (m == 0.0) => this.nodeMin.get.asInstanceOf[INodeTD].data.key
       case _ => this.kpl(m, 0.0)
     }
 
+    // recursive implementation of keyPFSLUB
     private[tree] def kpl(m: Double, psum: Double): Double
+
+    // obtains the nearest cluster to 'x'.  Returns the cluster (location, mass, prefix-sum)
+    private[sketches] final def nearTD(x: Double): (Double, Double, Double) = ntd(x, 0.0)
+
+    // recursive implementation for nearTD
+    private[tree] def ntd(x: Double, psum: Double): (Double, Double, Double)
+
+    // recursive implementation of 'update' method
+    private[tdmap] def upd(x0: Double, x: Double, m: Double): Node[Double]
   }
 
   trait LNodeTD extends NodeTD
@@ -63,6 +78,9 @@ object tree {
     with LNodeNearMap[Double, Double] {
     final def mcov(m: Double, psum: Double, cov: Cover[INodeTD]) = cov
     final def kpl(m: Double, psum: Double) = Double.NaN
+    final def ntd(x: Double, psum: Double) = (Double.NaN, Double.NaN, Double.NaN)
+    final def upd(x0: Double, x: Double, m: Double) =
+      throw new Exception("If this exception threw, there is a bug in this code")
   }
 
   trait INodeTD extends NodeTD
@@ -101,6 +119,65 @@ object tree {
         lsub.kpl(m, psum)
       }
     }
+
+    final def ntd(x: Double, psum: Double) = {
+      if (x < data.key) {
+        lsub match {
+          case ls: INodeTD => {
+            if (x <= ls.kmax) ls.ntd(x, psum)
+            else {
+              val (dk, ldk) = (math.abs(x - data.key), math.abs(x - ls.kmax))
+              if (dk <= ldk) (data.key, data.value, psum + lsub.pfs)
+              else {
+                val n = ls.node(ls.kmax).get.asInstanceOf[INodeTD]
+                (n.data.key, n.data.value, psum + lsub.pfs - n.data.value)
+              }
+            }
+          }
+          case _ => (data.key, data.value, psum + lsub.pfs)
+        }
+      } else if (x > data.key) {
+        rsub match {
+          case rs: INodeTD => {
+            if (x >= rs.kmin) rs.ntd(x, psum + lsub.pfs + data.value)
+            else {
+              val (dk, rdk) = (math.abs(x - data.key), math.abs(x - rs.kmin))
+              if (dk <= rdk) (data.key, data.value, psum + lsub.pfs)
+              else {
+                val n = rs.node(rs.kmin).get.asInstanceOf[INodeTD]
+                (n.data.key, n.data.value, psum + lsub.pfs + data.value)
+              }
+            }
+          }
+          case _ => (data.key, data.value, psum + lsub.pfs)
+        }
+      } else (data.key, data.value, psum + lsub.pfs)
+    }
+
+    final def upd(x0: Double, x: Double, m: Double) =
+      if (color == R) {
+        if (x0 < data.key) rNode(data, lsub.upd(x0, x, m), rsub)
+        else if (x0 > data.key) rNode(data, lsub, rsub.upd(x0, x, m))
+        else {
+          val d = new DataMap[Double, Double] {
+            val key = x
+            val value = m
+          }
+          rNode(d, lsub, rsub)
+        }
+      } else {
+        // We know we are directly replacing a node, so no need to call balance()
+        // in the case of black nodes. This is quite a bit faster. \o/
+        if (x0 < data.key) bNode(data, lsub.upd(x0, x, m), rsub)
+        else if (x0 > data.key) bNode(data, lsub, rsub.upd(x0, x, m))
+        else {
+          val d = new DataMap[Double, Double] {
+            val key = x
+            val value = m
+          }
+          bNode(d, lsub, rsub)
+        }
+      }
   }
 }
 
@@ -178,6 +255,15 @@ sealed trait TDigestMap extends SortedMap[Double, Double] with NodeTD
     val m2 = m1 + (tm1 - d1) + (if (c2 == this.keyMax.get) tm2 else tm2 / 2.0)
     (m1, m2)
   }
+
+  // This updates an existing cluster with a new location and mass.  It does this
+  // efficiently by taking advantage of the knowledge that (a) this kind of update
+  // never changes the key ordering, and therefore that (b) this operation can
+  // always directly replace an existing node, without otherwise changing the topology
+  // of the tree.  Clearly, this is a domain-dependent method, and not exposed to the
+  // public API
+  private[sketches] def update(x0: Double, x: Double, m: Double): TDigestMap =
+    this.upd(x0, x, m).asInstanceOf[TDigestMap]
 
   /** Compute the CDF for a value, using piece-wise linear between clusters */
   def cdf[N](xx: N)(implicit num: Numeric[N]) = {

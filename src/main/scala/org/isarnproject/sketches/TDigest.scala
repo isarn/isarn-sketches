@@ -46,15 +46,13 @@ case class TDigest(
   // re-cluster when number of clusters exceeds this threshold
   private val R = (TDigest.K / delta).toInt
 
-  private case class Cluster(centroid: Double, mass: Double, massUB: Double)
-
   /**
    * Returns a new t-digest with value x included in its sketch; td + x is equivalent to
    * td + (x, 1).
    * @param x The numeric data value to include in the sketch
    * @return the updated sketch
    */
-  def +[N](x: N)(implicit num: Numeric[N]): TDigest = this.+((x, 1))
+  def +[N](x: N)(implicit num: Numeric[N]): TDigest = this.plus(num.toDouble(x), 1.0)
 
   /**
    * Returns a new t-digest with new pair (x, w) included in its sketch.
@@ -65,18 +63,23 @@ case class TDigest(
    * Ted Dunning and Otmar Ertl,
    * https://github.com/tdunning/t-digest/blob/master/docs/t-digest-paper/histo.pdf
    */
-  def +[N1, N2](xw: (N1, N2))(implicit num1: Numeric[N1], num2: Numeric[N2]): TDigest = {
+  def +[N1, N2](xw: (N1, N2))(implicit num1: Numeric[N1], num2: Numeric[N2]): TDigest =
+    this.plus(num1.toDouble(xw._1), num2.toDouble(xw._2))
+
+  private def plus(x: Double, w: Double): TDigest = {
     if (nclusters <= maxDiscrete) {
-      val (x, w) = (num1.toDouble(xw._1), num2.toDouble(xw._2))
-      val ncNew = nclusters + (if (clusters.contains(x)) 0 else 1)
-      TDigest(delta, maxDiscrete, ncNew, clusters.increment(x, w))
+      clusters.getNode(x).fold {
+        TDigest(delta, maxDiscrete, nclusters + 1, clusters + (x -> w))
+      } { xnode =>
+        TDigest(delta, maxDiscrete, nclusters, clusters.update(x, x, xnode.data.value + w))
+      }
     } else {
-      val s = this.update(xw)
+      val s = this.update(x, w)
       if (s.nclusters <= R) s
       else {
         // too many clusters: attempt to compress it by re-clustering
         val ds = TDigest.shuffle(s.clusters.toVector)
-        ds.foldLeft(TDigest.empty(delta, maxDiscrete))((d, e) => d.update(e))
+        ds.foldLeft(TDigest.empty(delta, maxDiscrete)) { case (d, (x, w)) => d.update(x, w) }
       }
     }
   }
@@ -90,66 +93,37 @@ case class TDigest(
 
   // This is most of 'algorithm 1', except for re-clustering which is factored out to avoid
   // recursive calls during a reclustering phase
-  private def update[N1, N2](xw: (N1, N2))(implicit num1: Numeric[N1], num2: Numeric[N2]) = {
-    val xn = num1.toDouble(xw._1)
-    var wn = num2.toDouble(xw._2)
-    require(wn > 0.0, "data weight must be > 0")
+  private def update(x: Double, w: Double) = {
+    require(w > 0.0, "data weight must be > 0")
 
-    // Get the current cluster nearest to incoming (xn)
-    // Note: 'near' will have length 0,1, or 2:
-    // length 0 => current cluster map was empty (no data yet)
-    // length 1 => exactly one cluster was closest to (xn)
-    // length 2 => (xn) was mid-point between two clusters (both are returned, in key order)
-    val near = clusters.nearest(xn)
-
-    if (near.isEmpty) {
+    if (nclusters == 0) {
       // our map is empty, so insert this pair as the first cluster
-      TDigest(delta, maxDiscrete, nclusters + 1, clusters + ((xn, wn)))
+      TDigest(delta, maxDiscrete, nclusters + 1, clusters + (x -> w))
     } else {
-      // compute upper bounds for cluster masses, from their quantile estimates
-      var massPS = clusters.prefixSum(near.head._1, open = true)
-      val massTotal = clusters.sum
-      val s = near.map {
-        case (c, m) =>
-          val q = (massPS + m / 2.0) / massTotal
-          val ub = massTotal * delta * q * (1.0 - q)
-          massPS += m
-          Cluster(c, m, ub)
+      // Get the current cluster nearest to incoming (x)
+      val (c, m, psum) = clusters.nearTD(x)
+      if (x == c) {
+        // data landed on an existing cluster: increment that cluster's mass directly
+        TDigest(delta, maxDiscrete, nclusters, clusters.update(c, c, m + w))
+      } else {
+        val M = clusters.sum
+        val q = (psum + m / 2.0) / M
+        val ub = M * delta * q * (1.0 - q)
+
+        val dm = math.min(w, math.max(0.0, ub - m))
+        val rm = w - dm
+
+        val tClust = if (dm > 0.0) {
+          val nm = m + dm
+          val dc = dm * (x - c) / nm
+          clusters.update(c, c + dc, nm)
+        } else clusters
+
+        val uClust = if (rm > 0.0) tClust + (x -> rm) else tClust
+
+        // return the updated t-digest
+        TDigest(delta, maxDiscrete, nclusters + (if (rm > 0.0) 1 else 0), uClust)
       }
-
-      // assign new mass (wn) among the clusters
-      var cmNew = Vector.empty[(Double, Double)]
-      TDigest.shuffle(s).foreach { clust =>
-        if (wn <= 0.0) {
-          // if we have already distributed all the mass, remaining clusters unchanged
-          cmNew = cmNew :+ ((clust.centroid, clust.mass))
-        } else if (xn == clust.centroid) {
-          // if xn lies exactly on the centroid, add all mass in regardless of bound
-          cmNew = cmNew :+ ((clust.centroid, clust.mass + wn))
-          wn = 0.0
-        } else if (clust.mass < clust.massUB) {
-          // cluster can accept more mass, respecting its upper bound
-          val dm = math.min(wn, clust.massUB - clust.mass)
-          val mass = clust.mass + dm
-          val dc = dm * (xn - clust.centroid) / mass
-          wn -= dm
-          cmNew = cmNew :+ ((clust.centroid + dc, mass))
-        } else {
-          // cluster is at its upper bound for mass, it remains unchanged
-          cmNew = cmNew :+ ((clust.centroid, clust.mass))
-        }
-      }
-
-      // any remaining mass becomes a new cluster
-      if (wn > 0.0) cmNew = cmNew :+ ((xn, wn))
-
-      // remove original clusters and replace with the new ones
-      val clustDel = near.iterator.map(_._1).foldLeft(clusters)((c, e) => c - e)
-      val clustNew = cmNew.foldLeft(clustDel)((c, p) => c.increment(p._1, p._2))
-      val nc = nclusters - s.length + cmNew.length
-
-      // return the updated t-digest
-      TDigest(delta, maxDiscrete, nc, clustNew)
     }
   }
 
@@ -264,7 +238,7 @@ object TDigest {
     maxDiscrete: Int = 0)(implicit num: Numeric[N]): TDigest = {
     require(delta > 0.0, s"delta was not > 0")
     require(maxDiscrete >= 0, s"maxDiscrete was not >= 0")
-    val td = data.foldLeft(empty(delta, maxDiscrete))((c, e) => c + ((e, 1)))
+    val td = data.foldLeft(empty(delta, maxDiscrete))((c, e) => c + e)
     TDigest.shuffle(td.clusters.toVector).foldLeft(empty(delta, maxDiscrete))((c, e) => c + e)
   }
 
