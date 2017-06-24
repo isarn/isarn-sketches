@@ -44,7 +44,7 @@ case class TDigest(
   clusters: TDigestMap) extends Serializable {
 
   // re-cluster when number of clusters exceeds this threshold
-  private val R = (TDigest.K / delta).toInt
+  @inline private def R = (TDigest.K / delta).toInt
 
   /**
    * Returns a new t-digest with value x included in its sketch; td + x is equivalent to
