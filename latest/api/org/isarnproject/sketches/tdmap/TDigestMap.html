@@ -614,7 +614,7 @@ inherits functionality for value increment, prefix-sum and nearest-neighbor quer
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="org.isarnproject.collections.mixmaps.redblack.tree.Node#bNode" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="bNode(d:&lt;?&gt;,lsub:&lt;?&gt;,rsub:&lt;?&gt;):org.isarnproject.collections.mixmaps.redblack.tree.INode[K]"></a>
+      <a id="bNode(d:org.isarnproject.collections.mixmaps.redblack.tree.Data[K],lsub:org.isarnproject.collections.mixmaps.redblack.tree.Node[K],rsub:org.isarnproject.collections.mixmaps.redblack.tree.Node[K]):org.isarnproject.collections.mixmaps.redblack.tree.INode[K]"></a>
       <a id="bNode(Data[Double],Node[Double],Node[Double]):INode[Double]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -717,6 +717,32 @@ inherits functionality for value increment, prefix-sum and nearest-neighbor quer
       </span>
       </h4>
       <p class="shortcomment cmt">Compute the CDF for a value, using piece-wise linear between clusters</p>
+    </li><li name="org.isarnproject.sketches.tdmap.TDigestMap#cdfDiscrete" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="cdfDiscrete[N](xx:N)(implicitnum:scala.math.Numeric[N]):Double"></a>
+      <a id="cdfDiscrete[N](N)(Numeric[N]):Double"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cdfDiscrete</span><span class="tparams">[<span name="N">N</span>]</span><span class="params">(<span name="xx">xx: <span class="extype" name="org.isarnproject.sketches.tdmap.TDigestMap.cdfDiscrete.N">N</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="num">num: <span class="extype" name="scala.math.Numeric">Numeric</span>[<span class="extype" name="org.isarnproject.sketches.tdmap.TDigestMap.cdfDiscrete.N">N</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Double">Double</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="org.isarnproject.sketches.tdmap.TDigestMap#cdfDiscreteInverse" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="cdfDiscreteInverse[N](qq:N)(implicitnum:scala.math.Numeric[N]):Double"></a>
+      <a id="cdfDiscreteInverse[N](N)(Numeric[N]):Double"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cdfDiscreteInverse</span><span class="tparams">[<span name="N">N</span>]</span><span class="params">(<span name="qq">qq: <span class="extype" name="org.isarnproject.sketches.tdmap.TDigestMap.cdfDiscreteInverse.N">N</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="num">num: <span class="extype" name="scala.math.Numeric">Numeric</span>[<span class="extype" name="org.isarnproject.sketches.tdmap.TDigestMap.cdfDiscreteInverse.N">N</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Double">Double</span></span>
+      </span>
+      </h4>
+      
     </li><li name="org.isarnproject.sketches.tdmap.TDigestMap#cdfInverse" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="cdfInverse[N](qq:N)(implicitnum:scala.math.Numeric[N]):Double"></a>
       <a id="cdfInverse[N](N)(Numeric[N]):Double"></a>
@@ -1307,7 +1333,7 @@ interpolation between clusters
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="org.isarnproject.collections.mixmaps.ordered.OrderedLike#getNode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="getNode(k:&lt;?&gt;):Option[IN]"></a>
+      <a id="getNode(k:K):Option[IN]"></a>
       <a id="getNode(Double):Option[INodeTD]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -1424,7 +1450,7 @@ interpolation between clusters
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TraversableLike → GenTraversableLike</dd></dl></div>
     </li><li name="org.isarnproject.collections.mixmaps.increment.IncrementMapLike#increment" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="increment(k:K,iv:V):M"></a>
+      <a id="increment(k:&lt;?&gt;,iv:&lt;?&gt;):M"></a>
       <a id="increment(Double,Double):TDigestMap"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -1475,7 +1501,7 @@ interpolation between clusters
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>MapLike → GenMapLike → PartialFunction</dd></dl></div>
-    </li><li name="scala.collection.MapLike#isEmpty" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="org.isarnproject.collections.mixmaps.ordered.OrderedMapLike#isEmpty" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isEmpty:Boolean"></a>
       <a id="isEmpty:Boolean"></a>
       <h4 class="signature">
@@ -1487,7 +1513,7 @@ interpolation between clusters
         <span class="name">isEmpty</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>MapLike → IterableLike → TraversableLike → TraversableOnce → GenTraversableOnce</dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>OrderedMapLike → MapLike → IterableLike → TraversableLike → TraversableOnce → GenTraversableOnce</dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -1820,7 +1846,7 @@ node masses in the tree), then the right cover value will be None.
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="org.isarnproject.collections.mixmaps.nearest.NearestMapLike#nearest" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="nearest(k:K):Seq[(K,V)]"></a>
+      <a id="nearest(k:&lt;?&gt;):Seq[(K,V)]"></a>
       <a id="nearest(Double):Seq[(Double,Double)]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -2080,7 +2106,7 @@ node masses in the tree), then the right cover value will be None.
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>TraversableOnce → GenTraversableOnce</dd></dl></div>
     </li><li name="org.isarnproject.collections.mixmaps.redblack.tree.Node#rNode" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="rNode(d:&lt;?&gt;,lsub:&lt;?&gt;,rsub:&lt;?&gt;):org.isarnproject.collections.mixmaps.redblack.tree.INode[K]"></a>
+      <a id="rNode(d:org.isarnproject.collections.mixmaps.redblack.tree.Data[K],lsub:org.isarnproject.collections.mixmaps.redblack.tree.Node[K],rsub:org.isarnproject.collections.mixmaps.redblack.tree.Node[K]):org.isarnproject.collections.mixmaps.redblack.tree.INode[K]"></a>
       <a id="rNode(Data[Double],Node[Double],Node[Double]):INode[Double]"></a>
       <h4 class="signature">
       <span class="modifier_kind">

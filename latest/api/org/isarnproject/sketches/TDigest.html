@@ -35,7 +35,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">TDigest</span><span class="params">(<span name="delta">delta: <span class="extype" name="scala.Double">Double</span></span>, <span name="nclusters">nclusters: <span class="extype" name="scala.Int">Int</span></span>, <span name="clusters">clusters: <a href="tdmap/TDigestMap.html" class="extype" name="org.isarnproject.sketches.tdmap.TDigestMap">TDigestMap</a></span>)</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span> with <span class="extype" name="scala.Product">Product</span></span>
+        <span class="name">TDigest</span><span class="params">(<span name="delta">delta: <span class="extype" name="scala.Double">Double</span></span>, <span name="maxDiscrete">maxDiscrete: <span class="extype" name="scala.Int">Int</span></span>, <span name="nclusters">nclusters: <span class="extype" name="scala.Int">Int</span></span>, <span name="clusters">clusters: <a href="tdmap/TDigestMap.html" class="extype" name="org.isarnproject.sketches.tdmap.TDigestMap">TDigestMap</a></span>)</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span> with <span class="extype" name="scala.Product">Product</span></span>
       </span>
       </h4>
       
@@ -90,7 +90,7 @@ https://github.com/tdunning/t-digest/blob/master/docs/t-digest-paper/histo.pdf</
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="org.isarnproject.sketches.TDigest#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(delta:Double,nclusters:Int,clusters:org.isarnproject.sketches.tdmap.TDigestMap):org.isarnproject.sketches.TDigest"></a>
+      <a id="&lt;init&gt;(delta:Double,maxDiscrete:Int,nclusters:Int,clusters:org.isarnproject.sketches.tdmap.TDigestMap):org.isarnproject.sketches.TDigest"></a>
       <a id="&lt;init&gt;:TDigest"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -98,7 +98,7 @@ https://github.com/tdunning/t-digest/blob/master/docs/t-digest-paper/histo.pdf</
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">TDigest</span><span class="params">(<span name="delta">delta: <span class="extype" name="scala.Double">Double</span></span>, <span name="nclusters">nclusters: <span class="extype" name="scala.Int">Int</span></span>, <span name="clusters">clusters: <a href="tdmap/TDigestMap.html" class="extype" name="org.isarnproject.sketches.tdmap.TDigestMap">TDigestMap</a></span>)</span>
+        <span class="name">TDigest</span><span class="params">(<span name="delta">delta: <span class="extype" name="scala.Double">Double</span></span>, <span name="maxDiscrete">maxDiscrete: <span class="extype" name="scala.Int">Int</span></span>, <span name="nclusters">nclusters: <span class="extype" name="scala.Int">Int</span></span>, <span name="clusters">clusters: <a href="tdmap/TDigestMap.html" class="extype" name="org.isarnproject.sketches.tdmap.TDigestMap">TDigestMap</a></span>)</span>
       </span>
       </h4>
       
@@ -195,8 +195,8 @@ td + (x, 1).</p></div><dl class="paramcmts block"><dt class="param">x</dt><dd cl
         <span title="gt4s: $plus$plus" class="name">++</span><span class="params">(<span name="that">that: <a href="" class="extype" name="org.isarnproject.sketches.TDigest">TDigest</a></span>)</span><span class="result">: <a href="" class="extype" name="org.isarnproject.sketches.TDigest">TDigest</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Add this digest to another</p><div class="fullcomment"><div class="comment cmt"><p>Add this digest to another</p></div><dl class="paramcmts block"><dt class="param">that</dt><dd class="cmt"><p>The right-hand t-digest operand</p></dd><dt>returns</dt><dd class="cmt"><p>the sum of left and right digests, as defined by TDigestSemigroup</p></dd></dl><dl class="attributes block"> <dt>See also</dt><dd><span class="cmt"><p>TDigestSemigroup
-</p></span></dd></dl></div>
+      <p class="shortcomment cmt">Add this digest to another</p><div class="fullcomment"><div class="comment cmt"><p>Add this digest to another</p></div><dl class="paramcmts block"><dt class="param">that</dt><dd class="cmt"><p>The right-hand t-digest operand</p></dd><dt>returns</dt><dd class="cmt"><p>the result of combining left and right digests
+</p></dd></dl></div>
     </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="==(x$1:AnyRef):Boolean"></a>
       <a id="==(AnyRef):Boolean"></a>
@@ -251,6 +251,42 @@ td + (x, 1).</p></div><dl class="paramcmts block"><dt class="param">x</dt><dd cl
       <p class="shortcomment cmt">Compute a cumulative probability (CDF) for a numeric value, from the estimated probability
 distribution represented by this t-digest sketch.</p><div class="fullcomment"><div class="comment cmt"><p>Compute a cumulative probability (CDF) for a numeric value, from the estimated probability
 distribution represented by this t-digest sketch.</p></div><dl class="paramcmts block"><dt class="param">x</dt><dd class="cmt"><p>a numeric value</p></dd><dt>returns</dt><dd class="cmt"><p>the cumulative probability that a random sample from the distribution is &lt;= x
+</p></dd></dl></div>
+    </li><li name="org.isarnproject.sketches.TDigest#cdfDiscrete" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="cdfDiscrete[N](x:N)(implicitnum:Numeric[N]):Double"></a>
+      <a id="cdfDiscrete[N](N)(Numeric[N]):Double"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cdfDiscrete</span><span class="tparams">[<span name="N">N</span>]</span><span class="params">(<span name="x">x: <span class="extype" name="org.isarnproject.sketches.TDigest.cdfDiscrete.N">N</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="num">num: <span class="extype" name="scala.Numeric">Numeric</span>[<span class="extype" name="org.isarnproject.sketches.TDigest.cdfDiscrete.N">N</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Double">Double</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Compute a cumulative probability (CDF) for a numeric value, from the estimated probability
+distribution represented by this t-digest sketch, assuming sketch is &quot;discrete&quot;
+(e.</p><div class="fullcomment"><div class="comment cmt"><p>Compute a cumulative probability (CDF) for a numeric value, from the estimated probability
+distribution represented by this t-digest sketch, assuming sketch is &quot;discrete&quot;
+(e.g. if number of clusters &lt;= maxDiscrete setting)</p></div><dl class="paramcmts block"><dt class="param">x</dt><dd class="cmt"><p>a numeric value</p></dd><dt>returns</dt><dd class="cmt"><p>the cumulative probability that a random sample from the distribution is &lt;= x
+</p></dd></dl></div>
+    </li><li name="org.isarnproject.sketches.TDigest#cdfDiscreteInverse" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="cdfDiscreteInverse[N](q:N)(implicitnum:Numeric[N]):Double"></a>
+      <a id="cdfDiscreteInverse[N](N)(Numeric[N]):Double"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">cdfDiscreteInverse</span><span class="tparams">[<span name="N">N</span>]</span><span class="params">(<span name="q">q: <span class="extype" name="org.isarnproject.sketches.TDigest.cdfDiscreteInverse.N">N</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="num">num: <span class="extype" name="scala.Numeric">Numeric</span>[<span class="extype" name="org.isarnproject.sketches.TDigest.cdfDiscreteInverse.N">N</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Double">Double</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Compute the inverse cumulative probability (inverse-CDF) for a quantile value, from the
+estimated probability distribution represented by this t-digest sketch,
+assuming the sketch is &quot;discrete&quot; (e.</p><div class="fullcomment"><div class="comment cmt"><p>Compute the inverse cumulative probability (inverse-CDF) for a quantile value, from the
+estimated probability distribution represented by this t-digest sketch,
+assuming the sketch is &quot;discrete&quot; (e.g. if number of clusters &lt;= maxDiscrete setting)</p></div><dl class="paramcmts block"><dt class="param">q</dt><dd class="cmt"><p>a quantile value.  The value of q is expected to be on interval [0, 1]</p></dd><dt>returns</dt><dd class="cmt"><p>the smallest value x such that q &lt;= cdf(x)
 </p></dd></dl></div>
     </li><li name="org.isarnproject.sketches.TDigest#cdfInverse" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="cdfInverse[N](q:N)(implicitnum:Numeric[N]):Double"></a>
@@ -371,6 +407,19 @@ estimated probability distribution represented by this t-digest sketch.</p></div
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="org.isarnproject.sketches.TDigest#maxDiscrete" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="maxDiscrete:Int"></a>
+      <a id="maxDiscrete:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">maxDiscrete</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      
     </li><li name="org.isarnproject.sketches.TDigest#nclusters" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="nclusters:Int"></a>
       <a id="nclusters:Int"></a>
@@ -423,6 +472,56 @@ estimated probability distribution represented by this t-digest sketch.</p></div
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="org.isarnproject.sketches.TDigest#sample" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="sample:Double"></a>
+      <a id="sample:Double"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">sample</span><span class="result">: <span class="extype" name="scala.Double">Double</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Perform a random sampling from the distribution as sketched by this t-digest,
+using &quot;discrete&quot; (PMF) mode if the number of clusters &lt;= maxDiscrete setting,
+and &quot;density&quot; (PDF) mode otherwise.</p><div class="fullcomment"><div class="comment cmt"><p>Perform a random sampling from the distribution as sketched by this t-digest,
+using &quot;discrete&quot; (PMF) mode if the number of clusters &lt;= maxDiscrete setting,
+and &quot;density&quot; (PDF) mode otherwise.</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>A random number sampled from the sketched distribution</p></dd></dl><dl class="attributes block"> <dt>Note</dt><dd><span class="cmt"><p>uses the inverse transform sampling method
+</p></span></dd></dl></div>
+    </li><li name="org.isarnproject.sketches.TDigest#samplePDF" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="samplePDF:Double"></a>
+      <a id="samplePDF:Double"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">samplePDF</span><span class="result">: <span class="extype" name="scala.Double">Double</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Perform a random sampling from the distribution as sketched by this t-digest, in
+&quot;probability density&quot; mode.</p><div class="fullcomment"><div class="comment cmt"><p>Perform a random sampling from the distribution as sketched by this t-digest, in
+&quot;probability density&quot; mode.</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>A random number sampled from the sketched distribution</p></dd></dl><dl class="attributes block"> <dt>Note</dt><dd><span class="cmt"><p>uses the inverse transform sampling method
+</p></span></dd></dl></div>
+    </li><li name="org.isarnproject.sketches.TDigest#samplePMF" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="samplePMF:Double"></a>
+      <a id="samplePMF:Double"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">samplePMF</span><span class="result">: <span class="extype" name="scala.Double">Double</span></span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Perform a random sampling from the distribution as sketched by this t-digest, in
+&quot;probability mass&quot; (i.</p><div class="fullcomment"><div class="comment cmt"><p>Perform a random sampling from the distribution as sketched by this t-digest, in
+&quot;probability mass&quot; (i.e. discrete) mode.</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>A random number sampled from the sketched distribution</p></dd></dl><dl class="attributes block"> <dt>Note</dt><dd><span class="cmt"><p>uses the inverse transform sampling method
+</p></span></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
