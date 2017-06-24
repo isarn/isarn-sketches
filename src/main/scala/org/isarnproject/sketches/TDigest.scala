@@ -215,6 +215,8 @@ object TDigest {
   /**
    * Obtain an empty t-digest
    * @param delta a sketch resolution parameter.
+   * @param maxDiscrete sketch in discrete distribution mode up to this number of
+   * unique values.  Defaults to zero; normal continuous mode.
    * @note Smaller values of delta yield sketches with more clusters, and higher resolution
    * @note The expected number of clusters will vary (roughly) as (50/delta)
    */
@@ -228,6 +230,8 @@ object TDigest {
    * Sketch some data with a t-digest
    * @param data The data elements to sketch
    * @param delta The sketch resolution parameter.
+   * @param maxDiscrete sketch in discrete distribution mode up to this number of
+   * unique values.  Defaults to zero; normal continuous mode.
    * @return A t-digest sketch of the input data
    * @note Smaller values of delta yield sketches with more clusters, and higher resolution
    * @note The expected number of clusters will vary (roughly) as (50/delta)
@@ -246,6 +250,9 @@ object TDigest {
    * Combine two t-digests to yield a new digest
    * @param ltd the left-hand t-digest operand
    * @param rtd the right hand t-digest
+   * @param delta a sketch resolution parameter.
+   * @param maxDiscrete sketch in discrete distribution mode up to this number of
+   * unique values.  Defaults to zero; normal continuous mode.
    * @return the sum of left and right digests, defined as their aggregation
    * @note This operation satisfies a Semigroup law, with the caveat
    * that it is only "statistically" associative: d1++(d2++d3) will be statistically
