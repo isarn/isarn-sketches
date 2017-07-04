@@ -8,6 +8,8 @@ https://isarn.github.io/isarn-sketches/latest/api/
 isarn-sketches can operate with [Algebird](https://twitter.github.io/algebird/) via the
 [isarn-sketches-algebird-api](https://github.com/isarn/isarn-sketches-algebird-api)
 
+isarn-sketches can also operate with [Apache Spark](https://github.com/apache/spark) via the [isarn-sketches-spark](https://github.com/isarn/isarn-sketches-spark) library
+
 ### How to use in your project
 
 #### sbt
