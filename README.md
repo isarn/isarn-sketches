@@ -12,21 +12,8 @@ isarn-sketches can also operate with [Apache Spark](https://github.com/apache/sp
 
 ### How to use in your project
 
-#### sbt
 ``` scala
-resolvers += "isarn project" at "https://dl.bintray.com/isarn/maven/"
-
-libraryDependencies += "org.isarnproject" %% "isarn-sketches" % "0.1.0"
-```
-
-#### maven
-``` xml
-<dependency> 
-  <groupId>org.isarnproject</groupId>
-  <artifactId>isarn-sketches_2.10</artifactId> 
-  <version>0.1.0</version>
-  <type>pom</type> 
-</dependency>
+libraryDependencies += "org.isarnproject" %% "isarn-sketches" % "0.1.1"
 ```
 
 ### t-digest
