@@ -1,5 +1,5 @@
 /*
-Copyright 2016-2017 Erik Erlandson
+Copyright 2016-2018 Erik Erlandson
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -271,7 +271,9 @@ sealed trait TDigestMap extends SortedMap[Double, Double] with NodeTD
     this.coverR(x) match {
       case Cover(Some((c1, tm1)), Some((c2, tm2))) => {
         val (m1, m2) = m1m2(c1, tm1, c2, tm2)
-        (m1 + (x - c1) * (m2 - m1) / (c2 - c1)) / this.sum
+        val m = m1 + (x - c1) * (m2 - m1) / (c2 - c1)
+        // Clipping to [m1,m2] corrects numeric precision errors that can cause non-monotonic quirks
+        math.min(m2, math.max(m1, m)) / this.sum
       }
       case Cover(Some(_), None) => 1.0
       case _ => 0.0
@@ -297,7 +299,9 @@ sealed trait TDigestMap extends SortedMap[Double, Double] with NodeTD
   def cdfInverse[N](qq: N)(implicit num: Numeric[N]) = {
     def cdfI(m: Double, c1: Double, tm1: Double, c2: Double, tm2: Double) = {
       val (m1, m2) = m1m2(c1, tm1, c2, tm2)
-      c1 + (m - m1) * (c2 - c1) / (m2 - m1)
+      val x = c1 + (m - m1) * (c2 - c1) / (m2 - m1)
+      // Clipping to [c1,c2] corrects numeric precision errors that can cause non-monotonic quirks
+      math.min(c2, math.max(c1, x))
     }
 
     val q = num.toDouble(qq)

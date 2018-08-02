@@ -1,5 +1,5 @@
 /*
-Copyright 2016 Erik Erlandson
+Copyright 2016-2018 Erik Erlandson
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -79,6 +79,32 @@ class TDigestTest extends FlatSpec with Matchers {
     testTDvsDist(td, dist, stdv) && testSamplingPDF(td, dist)
   }
 
+  def testMonotoneCDF(dist: RealDistribution): Boolean = {
+    dist.reseedRandomGenerator(seed)
+    val td = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
+    val (xmin, xmax) = (td.clusters.keyMin.get, td.clusters.keyMax.get)
+    val step = (xmax - xmin) / 100000
+    val t = (xmin to xmax by step).iterator.map(x => td.cdf(x)).sliding(2).map(w => w(1) - w(0)).min
+    val pass = t >= 0.0
+    if (!pass) Console.err.println(s"testMonotoneCDF failure: t= $t")
+    pass
+  }
+
+  def testMonotoneCDFI(dist: RealDistribution): Boolean = {
+    dist.reseedRandomGenerator(seed)
+    val td = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
+    val (xmin, xmax) = (0.0, 1.0)
+    val step = (xmax - xmin) / 100000
+    val t = (xmin to xmax by step).iterator.map(q => td.cdfInverse(q)).sliding(2).map(w => w(1) - w(0)).min
+    val pass = t >= 0.0
+    if (!pass) Console.err.println(s"testMonotoneCDFI failure: t= $t")
+    pass
+  }
+
+  def testMonotone(dist: RealDistribution): Boolean = {
+    testMonotoneCDF(dist) && testMonotoneCDFI(dist)
+  }
+
   it should "sketch a uniform distribution" in {
     import org.apache.commons.math3.distribution.UniformRealDistribution
     val dist = new UniformRealDistribution()
@@ -106,6 +132,16 @@ class TDigestTest extends FlatSpec with Matchers {
     val td2 = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
 
     testTDvsDist(td1 ++ td2, dist, math.sqrt(dist.getNumericalVariance())) should be (true)
+  }
+
+  it should "respect monotonic cdf and inverse" in {
+    import org.apache.commons.math3.distribution.ExponentialDistribution
+    import org.apache.commons.math3.distribution.NormalDistribution
+    import org.apache.commons.math3.distribution.UniformRealDistribution
+
+    testMonotone(new UniformRealDistribution()) should be (true)
+    testMonotone(new ExponentialDistribution(1.0)) should be (true)
+    testMonotone(new NormalDistribution(0.0, 0.1)) should be (true)
   }
 
   it should "respect maxDiscrete parameter" in {
