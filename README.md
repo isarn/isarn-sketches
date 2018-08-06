@@ -13,7 +13,7 @@ isarn-sketches can also operate with [Apache Spark](https://github.com/apache/sp
 ### How to use in your project
 
 ``` scala
-libraryDependencies += "org.isarnproject" %% "isarn-sketches" % "0.1.1"
+libraryDependencies += "org.isarnproject" %% "isarn-sketches" % "0.1.2"
 ```
 
 ### t-digest
