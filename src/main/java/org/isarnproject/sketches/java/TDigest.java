@@ -17,4 +17,44 @@ limitations under the License.
 package org.isarnproject.sketches.java;
 
 public class TDigest {
+    public double compression;
+    public double[] centers;
+    public double[] masses;
+    public double[] cumulative;
+
+    public TDigest() {
+        int n = 20;
+        centers = new double[n];
+        masses = new double[n];
+        cumulative = new double[1 + n];
+        for (int j = 0; j < centers.length; ++j) {
+            centers[j] = 0.0;
+            masses[j] = 0.0;
+            cumulative[j] = 0.0;
+        }
+        cumulative[n] = 0.0;
+    }
+
+    public static final int lsb(int j) {
+        return j & (-j);
+    }
+
+    public double sumFT(int j) {
+        j += 1;
+        double s = 0.0;
+        while (j > 0) {
+            s += cumulative[j];
+            j -= lsb(j);
+        }
+        return s;
+    }
+
+    public void addFT(int j, double x) {
+        int n = cumulative.length;
+        j += 1;
+        while (j < n) {
+            cumulative[j] += x;
+            j += lsb(j);
+        }
+    }
 }
