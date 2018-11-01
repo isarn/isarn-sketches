@@ -19,8 +19,9 @@ package org.isarnproject.sketches.java;
 import java.lang.System;
 import java.util.Arrays;
 import java.io.Serializable;
+import java.util.concurrent.ThreadLocalRandom;
 
-public class TDigest implements Serializable {
+public final class TDigest implements Serializable {
     // these need to be private when the dust settles
     public double C = 0.1;
     public int maxDiscrete = 0;
@@ -45,6 +46,11 @@ public class TDigest implements Serializable {
     }
 
     public final void update(double x, double w) {
+        updateLogic(x, w);
+        if ((nclusters > maxDiscrete) && (nclusters > R())) recluster();
+    }
+
+    private final void updateLogic(double x, double w) {
         if (nclusters == 0) {
             // clusters are empty, so (x,w) becomes the first cluster
             cent[0] = x;
@@ -54,7 +60,7 @@ public class TDigest implements Serializable {
             nclusters += 1;
             return;
         }
-        if (nclusters < maxDiscrete) {
+        if (nclusters <= maxDiscrete) {
             // we are under the limit for discrete values to track
             int j = Arrays.binarySearch(cent, 0, nclusters, x);
             if (j >= 0) {
@@ -104,9 +110,23 @@ public class TDigest implements Serializable {
     }
 
     public final void recluster() {
-        
+        int[] indexes = new int[nclusters];
+        for (int j = 0; j < nclusters; ++j) indexes[j] = j;
+        intShuffle(indexes);
+        int sz = cent.length;
+        double[] oldCent = cent;
+        double[] oldMass = mass;
+        cent = new double[sz];
+        mass = new double[sz];
+        reset();
+        for (int j: indexes) updateLogic(oldCent[j], oldMass[j]);
     }
-    
+
+    public final void reset() {
+        nclusters = 0;
+        M = 0.0;
+    }
+
     private final void newCluster(int j, double x, double w) {
         double[] newCent = cent;
         double[] newMass = mass;
@@ -169,6 +189,32 @@ public class TDigest implements Serializable {
         while (j <= nclusters) {
             ftre[j] += w;
             j += j & (-j); // inc by least significant nonzero bit of j
+        }
+    }
+
+    protected final int R() {
+        return (int)(K / C);
+    }
+
+    public static double K = 10.0 * 50.0;
+
+    public static void intShuffle(int[] data) {
+        intShuffle(data, 0, data.length);
+    }
+
+    public static void intShuffle(int[] data, int end) {
+        intShuffle(data, 0, end);
+    }
+
+    public static void intShuffle(int[] data, int beg, int end) {
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        end -= 1;
+        while (end > beg) {
+            int r = rnd.nextInt(beg, end);
+            int d = data[end];
+            data[end] = data[r];
+            data[r] = d;
+            end -= 1;
         }
     }
 }
