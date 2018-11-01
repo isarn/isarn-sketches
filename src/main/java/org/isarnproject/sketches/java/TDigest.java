@@ -87,14 +87,20 @@ public class TDigest implements Serializable {
         double dm = Math.min(w, Math.max(0.0, ub - m));
         // rm is the remainder of the mass
         double rm = w - dm;
-        // add any allowable mass to closest cluster
         if (dm > 0.0) {
+            // Add any allowable mass to closest cluster and update its center.
+            // It is safe to update center this way because it will remain
+            // between x and original center, and so cannot move out of its original
+            // ordering relative to its neighbors, because x is by previous logic
+            // closer to cent[j] than any other cluster.
+            double dc = dm * (x - cent[j]) / (m + dm);
+            cent[j] += dc;
             Z += dm;
             mass[j] += dm;
             ftInc(j, dm);
         }
         // if there is remaining mass, it becomes a new cluster
-        if (rm > 0.0) newCluster((x < cent[j]) ? j : j + 1, x, w);
+        if (rm > 0.0) newCluster((x < cent[j]) ? j : j + 1, x, rm);
     }
 
     private final void newCluster(int j, double x, double w) {
