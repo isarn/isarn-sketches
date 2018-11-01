@@ -25,7 +25,7 @@ public class TDigest implements Serializable {
     public double C = 0.1;
     public int maxDiscrete = 0;
     public int nclusters = 0;
-    public double Z = 0.0;
+    public double M = 0.0;
     public double[] cent = null;
     public double[] mass = null;
     public double[] ftre = null;
@@ -48,7 +48,7 @@ public class TDigest implements Serializable {
         if (nclusters == 0) {
             // clusters are empty, so (x,w) becomes the first cluster
             cent[0] = x;
-            Z = w;
+            M = w;
             mass[0] = w;
             ftre[1] = w;
             nclusters += 1;
@@ -59,7 +59,7 @@ public class TDigest implements Serializable {
             int j = Arrays.binarySearch(cent, 0, nclusters, x);
             if (j >= 0) {
                 // landed on existing cluster: add its mass and we're done
-                Z += w;
+                M += w;
                 mass[j] += w;
                 ftInc(j, w);
             } else {
@@ -72,7 +72,7 @@ public class TDigest implements Serializable {
         int j = closest(x);
         if (x == cent[j]) {
             // landed on existing cluster: add its mass and we're done
-            Z += w;
+            M += w;
             mass[j] += w;
             ftInc(j, w);
             return;
@@ -80,9 +80,9 @@ public class TDigest implements Serializable {
         double m = mass[j];
         // q is the quantile of the closest cluster to x
         // (ftSum does the right thing (return 0) for j = 0)
-        double q = (ftSum(j - 1) + (m / 2.0)) / Z;
+        double q = (ftSum(j - 1) + (m / 2.0)) / M;
         // this is the upper-bound for the mass of closest cluster
-        double ub = C * Z * q * (1.0 - q);
+        double ub = C * M * q * (1.0 - q);
         // dm is how much mass we're allowed to add to closest cluster
         double dm = Math.min(w, Math.max(0.0, ub - m));
         // rm is the remainder of the mass
@@ -95,7 +95,7 @@ public class TDigest implements Serializable {
             // closer to cent[j] than any other cluster.
             double dc = dm * (x - cent[j]) / (m + dm);
             cent[j] += dc;
-            Z += dm;
+            M += dm;
             mass[j] += dm;
             ftInc(j, dm);
         }
@@ -103,6 +103,10 @@ public class TDigest implements Serializable {
         if (rm > 0.0) newCluster((x < cent[j]) ? j : j + 1, x, rm);
     }
 
+    public final void recluster() {
+        
+    }
+    
     private final void newCluster(int j, double x, double w) {
         double[] newCent = cent;
         double[] newMass = mass;
@@ -129,7 +133,7 @@ public class TDigest implements Serializable {
         ftre = newFtre;
         Arrays.fill(ftre, 0, 1 + nclusters, 0.0);
         for (int k = 0; k < nclusters; ++k) ftInc(k, mass[k]);
-        Z += w;
+        M += w;
     }
 
     private final int closest(double x) {
