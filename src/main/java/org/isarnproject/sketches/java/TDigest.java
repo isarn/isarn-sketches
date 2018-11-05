@@ -113,6 +113,8 @@ public final class TDigest implements Serializable {
     public final void merge(TDigest that) {
         Integer[] indexes = new Integer[that.nclusters];
         for (int j = 0; j < that.nclusters; ++j) indexes[j] = j;
+        // sort so that largest clusters are first.
+        // inserting large to small yields stable distribution estimations
         Comparator<Integer> cmp = new Comparator<Integer>() {
             @Override
             public int compare(Integer a, Integer b) {
