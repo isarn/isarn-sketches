@@ -18,6 +18,7 @@ package org.isarnproject.sketches.java;
 
 import java.lang.System;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.io.Serializable;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -107,6 +108,19 @@ public final class TDigest implements Serializable {
         }
         // if there is remaining mass, it becomes a new cluster
         if (rm > 0.0) newCluster((x < cent[j]) ? j : j + 1, x, rm);
+    }
+
+    public final void merge(TDigest that) {
+        Integer[] indexes = new Integer[that.nclusters];
+        for (int j = 0; j < that.nclusters; ++j) indexes[j] = j;
+        Comparator<Integer> cmp = new Comparator<Integer>() {
+            @Override
+            public int compare(Integer a, Integer b) {
+                return (int)Math.signum(that.mass[b] - that.mass[a]);
+            }
+        };
+        Arrays.sort(indexes, cmp);
+        for (int j: indexes) update(that.cent[j], that.mass[j]);
     }
 
     public final void recluster() {
