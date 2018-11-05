@@ -23,7 +23,8 @@ import java.io.Serializable;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class TDigest implements Serializable {
-    // these need to be private when the dust settles
+    // these need to be private to package when the dust settles
+    // either protected or no visibility keyword
     public double C = 0.1;
     public int maxDiscrete = 0;
     public int nclusters = 0;
