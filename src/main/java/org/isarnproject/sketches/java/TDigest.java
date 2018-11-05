@@ -189,6 +189,36 @@ public final class TDigest implements Serializable {
         return (dL < dR) ? (j - 1) : j;
     }
 
+    public final double cdf(double x) {
+        int j1 = rcovj(x);
+        if (j1 < 0) return 0.0;
+        if (j1 >= nclusters - 1) return 1.0;
+        int j2 = j1 + 1;
+        double c1 = cent[j1];
+        double c2 = cent[j2];
+        double tm1 = mass[j1];
+        double tm2 = mass[j2];
+        double s = ftSum(j1 - 1);
+        double d1 = (j1 == 0) ? 0.0 : tm1 / 2.0;
+        double m1 = s + d1;
+        double m2 = m1 + (tm1 - d1) + ((j2 == nclusters - 1) ? tm2 : tm2 / 2.0);
+        double m = m1 + (x - c1) * (m2 - m1) / (c2 - c1);
+        return Math.min(m2, Math.max(m1, m)) / M;
+    }
+
+    // returns the left index of a right-cover
+    private final int rcovj(double x) {
+        int j = Arrays.binarySearch(cent, 0, nclusters, x);
+        // exact match, return its index:
+        if (j >= 0) return j;
+        // x is not a cluster center, get its insertion index:
+        j = -(j + 1);
+        // x is to left of left-most cluster:
+        if (j == 0) return -1;
+        // return the index to the left of x:
+        return j - 1;
+    }
+
     // cumulative-sum algorithm for a Fenwick tree
     private final double ftSum(int j) {
         j += 1;
