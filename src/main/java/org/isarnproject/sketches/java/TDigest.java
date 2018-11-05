@@ -189,6 +189,10 @@ public final class TDigest implements Serializable {
         return (dL < dR) ? (j - 1) : j;
     }
 
+    public final int size() {
+        return nclusters;
+    }
+
     public final double cdf(double x) {
         int j1 = rcovj(x);
         if (j1 < 0) return 0.0;
