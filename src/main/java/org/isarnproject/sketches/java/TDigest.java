@@ -210,6 +210,49 @@ public final class TDigest implements Serializable {
         return Math.min(m2, Math.max(m1, m)) / M;
     }
 
+    public final double cdfInverse(double q) {
+        if (nclusters == 0) return Double.NaN;
+        if (q < 0.0 || q > 1.0) return Double.NaN;
+        double m = q * M;
+        int j1 = mcovj(m);
+        if (j1 < 0) return cent[0];
+        if (j1 >= nclusters - 1) return cent[nclusters - 1];
+        int j2 = j1 + 1;
+        double c1 = cent[j1];
+        double c2 = cent[j2];
+        double tm1 = mass[j1];
+        double tm2 = mass[j2];
+        double s = ftSum(j1 - 1);
+        double d1 = (j1 == 0) ? 0.0 : tm1 / 2.0;
+        double m1 = s + d1;
+        double m2 = m1 + (tm1 - d1) + ((j2 == nclusters - 1) ? tm2 : tm2 / 2.0);
+        double x = c1 + (m - m1) * (c2 - c1) / (m2 - m1);
+        return Math.min(c2, Math.max(c1, x));
+    }
+
+    // returns the left index of a mass cover
+    private final int mcovj(double m) {
+        if (nclusters == 0) return -1;
+        int beg = 0;
+        double mbeg = ftSum(beg);
+        if (m < mbeg) return -1;
+        int end = nclusters;
+        double mend = M;
+        if (m >= mend) return nclusters - 1;
+        while (beg < end) {
+            int mid = beg + (int)(((double)(end - beg)) * (m - mbeg) / (mend - mbeg));
+            double mmid = ftSum(mid);
+            if (m >= mmid) {
+                beg = mid;
+                mbeg = mmid;
+            } else {
+                end = mid;
+                mend = mmid;
+            }
+        }
+        return beg;
+    }
+
     // returns the left index of a right-cover
     private final int rcovj(double x) {
         int j = Arrays.binarySearch(cent, 0, nclusters, x);
