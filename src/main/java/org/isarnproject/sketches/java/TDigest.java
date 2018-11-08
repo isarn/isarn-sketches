@@ -210,6 +210,11 @@ public final class TDigest implements Serializable {
         return Math.min(m2, Math.max(m1, m)) / M;
     }
 
+    public final double cdfDiscrete(double x) {
+        int j = rcovj(x);
+        return ftSum(j) / M;
+    }
+
     public final double cdfInverse(double q) {
         if (q < 0.0 || q > 1.0) return Double.NaN;
         if (nclusters == 0) return Double.NaN;
