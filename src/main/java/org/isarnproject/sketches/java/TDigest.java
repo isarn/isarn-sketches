@@ -211,12 +211,11 @@ public final class TDigest implements Serializable {
     }
 
     public final double cdfInverse(double q) {
-        if (nclusters == 0) return Double.NaN;
         if (q < 0.0 || q > 1.0) return Double.NaN;
+        if (nclusters == 0) return Double.NaN;
+        if (nclusters == 1) return cent[0];
         double m = q * M;
         int j1 = mcovj(m);
-        if (j1 < 0) return cent[0];
-        if (j1 >= nclusters - 1) return cent[nclusters - 1];
         int j2 = j1 + 1;
         double c1 = cent[j1];
         double c2 = cent[j2];
@@ -232,15 +231,14 @@ public final class TDigest implements Serializable {
 
     // returns the left index of a mass cover
     private final int mcovj(double m) {
-        if (nclusters == 0) return -1;
+        assert nclusters >= 2;
+        assert (m >= 0.0) && (m <= M);
         int beg = 0;
-        double mbeg = ftSum(beg);
-        if (m < mbeg) return -1;
-        int end = nclusters;
+        double mbeg = 0.0;
+        int end = nclusters - 1;
         double mend = M;
-        if (m >= mend) return nclusters - 1;
-        while (beg < end) {
-            int mid = beg + (int)(((double)(end - beg)) * (m - mbeg) / (mend - mbeg));
+        while ((end - beg) > 1) {
+            int mid = (beg + end) / 2;
             double mmid = ftSum(mid);
             if (m >= mmid) {
                 beg = mid;
