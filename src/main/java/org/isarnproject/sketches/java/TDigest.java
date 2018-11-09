@@ -25,13 +25,13 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class TDigest implements Serializable {
     // these need to be private to package when the dust settles
     // either protected or no visibility keyword
-    public double C = 0.1;
-    public int maxDiscrete = 0;
-    public int nclusters = 0;
-    public double M = 0.0;
-    public double[] cent = null;
-    public double[] mass = null;
-    public double[] ftre = null;
+    protected double C = 0.1;
+    protected int maxDiscrete = 0;
+    protected int nclusters = 0;
+    protected double M = 0.0;
+    protected double[] cent = null;
+    protected double[] mass = null;
+    protected double[] ftre = null;
 
     public TDigest() {
         this(0.1, 0, 5);
