@@ -34,13 +34,28 @@ public final class TDigest implements Serializable {
     public double[] ftre = null;
 
     public TDigest() {
-        // estimate an initial (sz) from compression?
-        int sz = 5;
+        this(0.1, 0, 5);
+    }
+
+    public TDigest(double compression) {
+        this(compression, 0, 5);
+    }
+
+    public TDigest(double compression, int maxDiscrete) {
+        this(compression, maxDiscrete, 5);
+    }
+
+    public TDigest(double compression, int maxDiscrete, int sz) {
+        assert compression > 0.0;
+        assert maxDiscrete >= 0;
+        assert sz > 0;
+        C = compression;
+        maxDiscrete = maxDiscrete;
         cent = new double[sz];
         mass = new double[sz];
         ftre = new double[1 + sz];
         // ftre is 1-based. set ftre[0] to zero just to be tidy
-        ftre[0] = 0.0;
+        ftre[0] = 0.0;        
     }
 
     public final void update(double x) {
