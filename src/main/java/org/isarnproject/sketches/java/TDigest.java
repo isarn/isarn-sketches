@@ -220,7 +220,7 @@ public final class TDigest implements Serializable {
         if (nclusters == 0) return Double.NaN;
         if (nclusters == 1) return cent[0];
         double m = q * M;
-        int j1 = mcovj(m);
+        int j1 = rmcovj(m);
         int j2 = j1 + 1;
         double c1 = cent[j1];
         double c2 = cent[j2];
@@ -234,8 +234,18 @@ public final class TDigest implements Serializable {
         return Math.min(c2, Math.max(c1, x));
     }
 
-    // returns the left index of a mass cover
-    private final int mcovj(double m) {
+    public final double cdfDiscreteInverse(double q) {
+        if (q < 0.0 || q > 1.0) return Double.NaN;
+        if (nclusters == 0) return Double.NaN;
+        if (nclusters == 1) return cent[0];
+        double m = q * M;
+        int j = lmcovj(m);
+        return cent[j];
+    }
+
+    // returns the index of a right mass cover
+    // ftSum(j) <= m < ftSum(j+1)
+    private final int rmcovj(double m) {
         assert nclusters >= 2;
         assert (m >= 0.0) && (m <= M);
         int beg = 0;
@@ -254,6 +264,29 @@ public final class TDigest implements Serializable {
             }
         }
         return beg;
+    }
+
+    // returns the index of a left mass cover
+    // ftSum(j-1) < m <= ftSum(j)
+    private final int lmcovj(double m) {
+        assert nclusters >= 2;
+        assert (m >= 0.0) && (m <= M);
+        int beg = -1;
+        double mbeg = 0.0;
+        int end = nclusters - 1;
+        double mend = M;
+        while ((end - beg) > 1) {
+            int mid = (beg + end) / 2;
+            double mmid = ftSum(mid);
+            if (m <= mmid) {
+                end = mid;
+                mend = mmid;
+            } else {
+                beg = mid;
+                mbeg = mmid;
+            }
+        }
+        return end;
     }
 
     // returns the left index of a right-cover
