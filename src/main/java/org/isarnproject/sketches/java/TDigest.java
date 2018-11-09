@@ -193,6 +193,14 @@ public final class TDigest implements Serializable {
         return nclusters;
     }
 
+    public final double mass() {
+        return M;
+    }
+
+    public final boolean isEmpty() {
+        return nclusters == 0;
+    }
+
     public final double cdf(double x) {
         int j1 = rcovj(x);
         if (j1 < 0) return 0.0;
