@@ -58,6 +58,16 @@ public final class TDigest implements Serializable {
         ftre[0] = 0.0;        
     }
 
+    public TDigest(TDigest that) {
+        C = that.C;
+        maxDiscrete = that.maxDiscrete;
+        nclusters = that.nclusters;
+        M = that.M;
+        cent = Arrays.copyOf(that.cent, nclusters);
+        mass = Arrays.copyOf(that.mass, nclusters);
+        ftre = Arrays.copyOf(that.ftre, nclusters);
+    }
+
     public final void update(double x) {
         update(x, 1.0);
     }
