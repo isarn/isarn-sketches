@@ -246,7 +246,23 @@ public final class TDigest implements Serializable {
         sb.append(")");
         return sb.toString();
     }
-    
+
+    public final double samplePDF() {
+        return cdfInverse(ThreadLocalRandom.current().nextDouble());
+    }
+
+    public final double samplePMF() {
+        return cdfDiscreteInverse(ThreadLocalRandom.current().nextDouble());
+    }
+
+    public final double sample() {
+        if (nclusters <= maxDiscrete) {
+            return cdfDiscreteInverse(ThreadLocalRandom.current().nextDouble());
+        } else {
+            return cdfInverse(ThreadLocalRandom.current().nextDouble());
+        }    
+    }
+
     public final double cdf(double x) {
         int j1 = rcovj(x);
         if (j1 < 0) return 0.0;
