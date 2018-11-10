@@ -26,8 +26,8 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class TDigest implements Serializable {
     // these need to be private to package when the dust settles
     // either protected or no visibility keyword
-    protected double C = 0.1;
-    protected int maxDiscrete = 0;
+    protected final double C;
+    protected final int maxDiscrete;
     protected int nclusters = 0;
     protected double M = 0.0;
     protected double[] cent = null;
@@ -35,15 +35,15 @@ public final class TDigest implements Serializable {
     protected double[] ftre = null;
 
     public TDigest() {
-        this(0.1, 0, 5);
+        this(COMPRESSION_DEFAULT, 0, INIT_SIZE_DEFAULT);
     }
 
     public TDigest(double compression) {
-        this(compression, 0, 5);
+        this(compression, 0, INIT_SIZE_DEFAULT);
     }
 
     public TDigest(double compression, int maxDiscrete) {
-        this(compression, maxDiscrete, 5);
+        this(compression, maxDiscrete, INIT_SIZE_DEFAULT);
     }
 
     public TDigest(double compression, int maxDiscrete, int sz) {
@@ -51,7 +51,7 @@ public final class TDigest implements Serializable {
         assert maxDiscrete >= 0;
         assert sz > 0;
         C = compression;
-        maxDiscrete = maxDiscrete;
+        this.maxDiscrete = maxDiscrete;
         cent = new double[sz];
         mass = new double[sz];
         ftre = new double[1 + sz];
@@ -380,7 +380,12 @@ public final class TDigest implements Serializable {
         return (int)(K / C);
     }
 
-    public static double K = 10.0 * 50.0;
+    public static final double K = 10.0 * 50.0;
+
+    /** delta * E[clusters] ~ 50 */
+    public static final double COMPRESSION_DEFAULT = 50.0 / 100.0;
+
+    public static final int INIT_SIZE_DEFAULT = 5;
 
     public static void intShuffle(int[] data) {
         intShuffle(data, 0, data.length);
