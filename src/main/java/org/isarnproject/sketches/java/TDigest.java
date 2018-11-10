@@ -387,6 +387,22 @@ public final class TDigest implements Serializable {
 
     public static final int INIT_SIZE_DEFAULT = 5;
 
+    public static TDigest empty() {
+        return new TDigest(COMPRESSION_DEFAULT, 0, INIT_SIZE_DEFAULT);
+    }
+
+    public static TDigest empty(double compression) {
+        return new TDigest(compression, 0, INIT_SIZE_DEFAULT);
+    }
+
+    public static TDigest empty(double compression, int maxDiscrete) {
+        return new TDigest(compression, maxDiscrete, INIT_SIZE_DEFAULT);
+    }
+
+    public static TDigest empty(double compression, int maxDiscrete, int sz) {
+        return new TDigest(compression, maxDiscrete, sz);
+    }
+
     public static void intShuffle(int[] data) {
         intShuffle(data, 0, data.length);
     }
