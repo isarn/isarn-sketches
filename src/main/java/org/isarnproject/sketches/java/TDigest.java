@@ -17,6 +17,7 @@ limitations under the License.
 package org.isarnproject.sketches.java;
 
 import java.lang.System;
+import java.lang.StringBuilder;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.io.Serializable;
@@ -226,6 +227,26 @@ public final class TDigest implements Serializable {
         return nclusters == 0;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("TDigest(");
+        for (int j = 0; j < nclusters; ++j) {
+            if (j > 25) {
+                sb.append(" ...");
+                break;
+            }
+            if (j > 0) sb.append(", ");
+            sb.append(cent[j])
+                .append(" -> (")
+                .append(mass[j])
+                .append(", ")
+                .append(ftSum(j))
+                .append(")");
+        }
+        sb.append(")");
+        return sb.toString();
+    }
+    
     public final double cdf(double x) {
         int j1 = rcovj(x);
         if (j1 < 0) return 0.0;
