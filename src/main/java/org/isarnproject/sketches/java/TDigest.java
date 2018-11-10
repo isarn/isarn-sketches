@@ -403,6 +403,22 @@ public final class TDigest implements Serializable {
         return new TDigest(compression, maxDiscrete, sz);
     }
 
+    public static TDigest merge(TDigest ltd, TDigest rtd) {
+        if (ltd.size() < rtd.size()) return merge(rtd, ltd);
+        if (rtd.size() == 0) return ltd;
+        if (rtd.size() == 1) {
+            ltd.update(rtd.cent[0], rtd.mass[0]);
+            return ltd;
+        }
+        if (rtd.mass() < ltd.mass()) {
+            ltd.merge(rtd);
+            return ltd;
+        } else {
+            rtd.merge(ltd);
+            return rtd;
+        }
+    }
+
     public static void intShuffle(int[] data) {
         intShuffle(data, 0, data.length);
     }
