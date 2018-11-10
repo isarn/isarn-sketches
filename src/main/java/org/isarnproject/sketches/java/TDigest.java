@@ -419,6 +419,25 @@ public final class TDigest implements Serializable {
         }
     }
 
+    public static TDigest sketch(double[] data) {
+        return sketch(data, COMPRESSION_DEFAULT, 0, INIT_SIZE_DEFAULT);
+    }
+
+    public static TDigest sketch(double[] data, double compression) {
+        return sketch(data, compression, 0, INIT_SIZE_DEFAULT);
+    }
+
+    public static TDigest sketch(double[] data, double compression, int maxDiscrete) {
+        return sketch(data, compression, maxDiscrete, INIT_SIZE_DEFAULT);
+    }
+
+    public static TDigest sketch(double[] data, double compression, int maxDiscrete, int sz) {
+        TDigest td = empty(compression, maxDiscrete, sz);
+        for (double x: data) td.update(x, 1.0);
+        if (td.size() > maxDiscrete) td.recluster();
+        return td;
+    }
+
     public static void intShuffle(int[] data) {
         intShuffle(data, 0, data.length);
     }
