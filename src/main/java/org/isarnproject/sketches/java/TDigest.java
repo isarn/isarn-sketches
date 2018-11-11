@@ -24,8 +24,6 @@ import java.io.Serializable;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class TDigest implements Serializable {
-    // these need to be private to package when the dust settles
-    // either protected or no visibility keyword
     protected final double C;
     protected final int maxDiscrete;
     protected int nclusters = 0;
@@ -390,6 +388,58 @@ public final class TDigest implements Serializable {
             ftre[j] += w;
             j += j & (-j); // inc by least significant nonzero bit of j
         }
+    }
+
+    @Override
+    public boolean equals(Object that) {
+        if (!(that instanceof TDigest)) return false;
+        if (this == that) return true;
+        TDigest rhs = (TDigest)that;
+        if (C != rhs.C) return false;
+        if (maxDiscrete != rhs.maxDiscrete) return false;
+        if (nclusters != rhs.nclusters) return false;
+        if (M != rhs.M) return false;
+        if (!equal(cent, rhs.cent, nclusters)) return false;
+        if (!equal(mass, rhs.mass, nclusters)) return false;
+        // if masses are equal, cumulative ftre had better also be equal
+        return true;
+    }
+
+    // I can't believe java just added this to Arrays in java 9
+    static final boolean equal(double[] lhs, double[] rhs, int n) {
+        for (int j = 0; j < n; ++j) {
+            if (lhs[j] != rhs[j]) return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int h = nclusters;
+        h ^= doubleHash(M);
+        if (nclusters >= 1) {
+            h ^= doubleHash(cent[0]);
+            h ^= doubleHash(mass[0]);
+            h ^= doubleHash(ftre[1]);
+        }
+        if (nclusters >= 2) {
+            h ^= doubleHash(cent[nclusters - 1]);
+            h ^= doubleHash(mass[nclusters - 1]);
+            h ^= doubleHash(ftre[nclusters]);
+        }
+        if (nclusters >= 3) {
+            int j = nclusters / 2;
+            h ^= doubleHash(cent[j]);
+            h ^= doubleHash(mass[j]);
+            h ^= doubleHash(ftre[1 + j]);
+        }
+        return h;
+    }
+
+    // I can't believe Double doesn't provide a static method for this
+    static final int doubleHash(double x) {
+        long v = Double.doubleToLongBits(x);
+        return (int)(v ^ (v >>> 32));
     }
 
     protected final int R() {
