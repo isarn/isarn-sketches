@@ -142,4 +142,20 @@ class JavaTDigestTest extends FlatSpec with Matchers {
     testMonotone(new NormalDistribution(0.0, 0.1)) should be (true)
   }
 
+  it should "respect maxDiscrete parameter" in {
+    import org.apache.commons.math3.distribution.GeometricDistribution
+    val gd = new GeometricDistribution(0.33)
+    val data = gd.sample(1000000).map(_.toDouble)
+    val dataUniq = data.distinct.sorted
+    val kt = dataUniq.map(_.toDouble).toSet
+    val td = TDigest.sketch(data, delta, 50)
+    val clust = td.cent
+    clust.toSet should be (kt)
+    val D = clust.map { x => td.cdfDiscrete(x) }
+      .zip(dataUniq.map { k => gd.cumulativeProbability(k.toInt) })
+      .map { case (p1, p2) => math.abs(p1 - p2) }
+      .max
+    (D <= 0.01) should be (true)
+    testSamplingPMF(td, gd) should be (true)
+  }
 }
