@@ -158,4 +158,36 @@ class JavaTDigestTest extends FlatSpec with Matchers {
     (D <= 0.01) should be (true)
     testSamplingPMF(td, gd) should be (true)
   }
+
+  it should "respect maxDiscrete parameter over merge" in {
+    import org.apache.commons.math3.distribution.GeometricDistribution
+    val gd = new GeometricDistribution(0.33)
+    val tdvec = Vector.fill(10) { TDigest.sketch(gd.sample(100000).map(_.toDouble), delta, 50) }
+    val td = tdvec.reduce((a, b) => TDigest.merge(a, b))
+    val clust = td.cent
+    clust.map(_.toInt).map(_.toDouble).toVector should beEqSeq(clust.toVector)
+    val D = clust.map { x => td.cdfDiscrete(x) }
+      .zip(clust.map(_.toInt).map { k => gd.cumulativeProbability(k) })
+      .map { case (p1, p2) => math.abs(p1 - p2) }
+      .max
+    (D <= 0.01) should be (true)
+    testSamplingPMF(td, gd) should be (true)
+  }
+
+  it should "serialize and deserialize" in {
+    import org.apache.commons.math3.distribution.NormalDistribution
+
+    import org.isarnproject.scalatest.serde.roundTripSerDe
+
+    val dist = new NormalDistribution()
+    dist.reseedRandomGenerator(seed)
+
+    val tdo = TDigest.sketch(Array.fill(ss) { dist.sample }, delta)
+
+    val tdi = roundTripSerDe(tdo)
+
+    (tdi.equals(tdo)) should be (true)
+
+    testTDvsDist(tdi, dist, math.sqrt(dist.getNumericalVariance())) should be (true)
+  }
 }
