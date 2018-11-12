@@ -20,8 +20,6 @@ import org.scalatest._
 
 import org.isarnproject.scalatest.matchers.seq._
 
-case class Test(t: Int) extends Serializable
-
 class TDigestTest extends FlatSpec with Matchers {
   import org.apache.commons.math3.distribution.RealDistribution
   import org.apache.commons.math3.distribution.IntegerDistribution
