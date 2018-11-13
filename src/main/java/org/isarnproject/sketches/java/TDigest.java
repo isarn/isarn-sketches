@@ -1,5 +1,5 @@
 /*
-Copyright 2016 Erik Erlandson
+Copyright 2016-2018 Erik Erlandson
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -221,6 +221,26 @@ public final class TDigest implements Serializable {
         return M;
     }
 
+    public final double getCompression() {
+        return C;
+    }
+
+    public final int getMaxDiscrete() {
+        return maxDiscrete;
+    }
+
+    public final double[] getCent() {
+        return cent;
+    }
+
+    public final double[] getMass() {
+        return mass;
+    }
+
+    public final double[] getFT() {
+        return ftre;
+    }
+    
     public final boolean isEmpty() {
         return nclusters == 0;
     }
