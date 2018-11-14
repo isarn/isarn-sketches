@@ -2,7 +2,7 @@
 // xsbt clean unidoc ghpagesPushSite
 // xsbt -Dsbt.global.base=/home/eje/.sbt/sonatype +publish
 
-name := "isarn-sketches"
+//name := "isarn-sketches"
 
 organization := "org.isarnproject"
 
@@ -44,21 +44,39 @@ developers := List(
   )
 )
 
-libraryDependencies ++= Seq(
-  "org.isarnproject" %% "isarn-algebra-api" % "0.0.3",
-  "org.isarnproject" %% "isarn-collections" % "0.0.4",
-  "org.isarnproject" %% "isarn-scalatest" % "0.0.3" % Test,
-  "org.scalatest" %% "scalatest" % "3.0.5" % Test,
-  "org.apache.commons" % "commons-math3" % "3.6.1" % Test)
+compileOrder := CompileOrder.JavaThenScala
+
+javacOptions ++= Seq()
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 
 scalacOptions in (Compile, doc) ++= Seq("-doc-root-content", baseDirectory.value+"/root-doc.txt")
 
-enablePlugins(ScalaUnidocPlugin, GhpagesPlugin)
+enablePlugins(ScalaUnidocPlugin, JavaUnidocPlugin, GenJavadocPlugin, PublishJavadocPlugin, GhpagesPlugin)
 
 siteSubdirName in ScalaUnidoc := "latest/api"
 
+siteSubdirName in JavaUnidoc := "java/api"
+
 addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)
 
+addMappingsToSiteDir(mappings in (JavaUnidoc, packageDoc), siteSubdirName in JavaUnidoc)
+
 git.remoteRepo := "git@github.com:isarn/isarn-sketches.git"
+
+lazy val isarn_sketches_java = (project in file("isarn-sketches-java"))
+  .settings(name := "isarn-sketches-java")
+  .settings(crossPaths := false) // drop off Scala suffix from artifact names
+  .settings(autoScalaLibrary := false) // exclude scala-library from dependencies
+
+lazy val isarn_sketches = (project in file("."))
+  .aggregate(isarn_sketches_java)
+  .dependsOn(isarn_sketches_java)
+  .settings(name := "isarn-sketches")
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.isarnproject" %% "isarn-algebra-api" % "0.0.3",
+      "org.isarnproject" %% "isarn-collections" % "0.0.4",
+      "org.isarnproject" %% "isarn-scalatest" % "0.0.3" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.5" % Test,
+      "org.apache.commons" % "commons-math3" % "3.6.1" % Test))
