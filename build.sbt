@@ -52,9 +52,11 @@ scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 
 scalacOptions in (Compile, doc) ++= Seq("-doc-root-content", baseDirectory.value+"/root-doc.txt")
 
-enablePlugins(ScalaUnidocPlugin, JavaUnidocPlugin, GenJavadocPlugin, PublishJavadocPlugin, GhpagesPlugin)
+enablePlugins(ScalaUnidocPlugin, JavaUnidocPlugin, GhpagesPlugin)
 
-siteSubdirName in ScalaUnidoc := "latest/api"
+git.remoteRepo := "git@github.com:isarn/isarn-sketches.git"
+
+siteSubdirName in ScalaUnidoc := "scala/api"
 
 siteSubdirName in JavaUnidoc := "java/api"
 
@@ -62,12 +64,24 @@ addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in Sc
 
 addMappingsToSiteDir(mappings in (JavaUnidoc, packageDoc), siteSubdirName in JavaUnidoc)
 
-git.remoteRepo := "git@github.com:isarn/isarn-sketches.git"
+// tell unidoc to not do scala-doc for the isarn-sketches-java (javadoc will still get created)
+unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(isarn_sketches_java)
+
+// this target needs to execute only once, at the top level
+// turn it off for any sub-projects
+def siteSubProjectSettings = Seq(
+  previewSite := {}
+)
+
+// browser insisted on caching some older generated site at the default (4000)
+previewFixedPort := Some(4444)
 
 lazy val isarn_sketches_java = (project in file("isarn-sketches-java"))
   .settings(name := "isarn-sketches-java")
   .settings(crossPaths := false) // drop off Scala suffix from artifact names
   .settings(autoScalaLibrary := false) // exclude scala-library from dependencies
+  .enablePlugins(GenJavadocPlugin, PublishJavadocPlugin)
+  .settings(siteSubProjectSettings :_*)
 
 lazy val isarn_sketches = (project in file("."))
   .aggregate(isarn_sketches_java)
@@ -79,4 +93,5 @@ lazy val isarn_sketches = (project in file("."))
       "org.isarnproject" %% "isarn-collections" % "0.0.4",
       "org.isarnproject" %% "isarn-scalatest" % "0.0.3" % Test,
       "org.scalatest" %% "scalatest" % "3.0.5" % Test,
-      "org.apache.commons" % "commons-math3" % "3.6.1" % Test))
+      "org.apache.commons" % "commons-math3" % "3.6.1" % Test)
+      )
