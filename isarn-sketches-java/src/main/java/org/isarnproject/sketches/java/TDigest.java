@@ -23,27 +23,73 @@ import java.util.Comparator;
 import java.io.Serializable;
 import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * A t-digest sketch of sampled numeric data
+ * <pre>
+ * Computing Extremely Accurate Quantiles Using t-Digests,
+ * Ted Dunning and Otmar Ertl,
+ * https://github.com/tdunning/t-digest/blob/master/docs/t-digest-paper/histo.pdf
+ * </pre>
+ *
+ * <pre>
+ * import org.isarnproject.sketches.java.TDigest;
+ * double[] data = // data that you would like to sketch
+ * TDigest sketch = TDigest.sketch(data)
+ * // the cumulative distribution function of the sketch; cdf(x) at x = 0
+ * double cdf = sketch.cdf(0.0)
+ * // inverse of the CDF, evaluated at q = 0.5
+ * double cdfi = sketch.cdfInverse(0.5)
+ * </pre>
+ */
 public final class TDigest implements Serializable {
+    /** compression setting (delta in original paper) */
     protected final double C;
+    /** maximum number of unique discrete values to track */
     protected final int maxDiscrete;
+    /** current number of clusters */
     protected int nclusters = 0;
+    /** total mass of data sampled so far */
     protected double M = 0.0;
+    /** cluster centers */
     protected double[] cent = null;
+    /** cluster masses */
     protected double[] mass = null;
+    /** cumulative cluster masses, represented as a Fenwick Tree */
     protected double[] ftre = null;
 
+    /** A new t-digest sketching structure with default compression and maximum discrete tracking. */
     public TDigest() {
         this(COMPRESSION_DEFAULT, 0, INIT_SIZE_DEFAULT);
     }
 
+    /** Construct a t-digest with the given compression.
+     * Maximum discrete tracking defaults to zero.
+     * @param compression sketching compression setting. Higher = more compression.
+     * Must be &gt; 0.
+     */
     public TDigest(double compression) {
         this(compression, 0, INIT_SIZE_DEFAULT);
     }
 
+    /** Construct a t-digest with the given compression and maximum discrete tracking.
+     * @param compression sketching compression setting. Higher = more compression.
+     * Must be &gt; 0.
+     * @param maxDiscrete maximum number of unique discrete values to track. Must be &ge; 0.
+     * If this number of values is exceeded, the sketch will begin to operate in 
+     * normal continuous mode.
+     */
     public TDigest(double compression, int maxDiscrete) {
         this(compression, maxDiscrete, INIT_SIZE_DEFAULT);
     }
 
+    /** Construct a t-digest with the given compression and maximum discrete tracking.
+     * @param compression sketching compression setting. Higher = more compression.
+     * Must be &gt; 0.
+     * @param maxDiscrete maximum number of unique discrete values to track. Must be &ge; 0.
+     * If this number of values is exceeded, the sketch will begin to operate in 
+     * normal continuous mode.
+     * @param sz initial capacity to use for internal arrays. Must be &gt; 0.
+     */
     public TDigest(double compression, int maxDiscrete, int sz) {
         assert compression > 0.0;
         assert maxDiscrete >= 0;
@@ -57,6 +103,7 @@ public final class TDigest implements Serializable {
         ftre[0] = 0.0;        
     }
 
+    /** Construct a deep copy of another t-digest */
     public TDigest(TDigest that) {
         C = that.C;
         maxDiscrete = that.maxDiscrete;
@@ -67,10 +114,17 @@ public final class TDigest implements Serializable {
         ftre = Arrays.copyOf(that.ftre, nclusters);
     }
 
+    /** Update the sketch with a new sampled value
+     * @param x the new sampled value
+     */
     public final void update(double x) {
         update(x, 1.0);
     }
 
+    /** Update the sketch with a new sampled value
+     * @param x the new sampled value
+     * @param w the weight (aka mass) associated with x
+     */
     public final void update(double x, double w) {
         updateLogic(x, w);
         if ((nclusters > maxDiscrete) && (nclusters > R())) recluster();
@@ -135,6 +189,9 @@ public final class TDigest implements Serializable {
         if (rm > 0.0) newCluster((x < cent[j]) ? j : j + 1, x, rm);
     }
 
+    /** Merge another t-digest into this one.
+     * @param that the t-digest to merge. This t-digest is unaltered.
+     */
     public final void merge(TDigest that) {
         Integer[] indexes = new Integer[that.nclusters];
         for (int j = 0; j < that.nclusters; ++j) indexes[j] = j;
@@ -150,7 +207,11 @@ public final class TDigest implements Serializable {
         for (int j: indexes) update(that.cent[j], that.mass[j]);
     }
 
+    /** Re-cluster this t-digest by reinserting its clusters in randomized order. */
     public final void recluster() {
+        // I suspect it may be possible to improve on this fully-randomized algorithm,
+        // by leveraging the largest-first heuristic I use in cluster merging. See:
+        // http://erikerlandson.github.io/blog/2016/12/19/converging-monoid-addition-for-t-digest/
         int[] indexes = new int[nclusters];
         for (int j = 0; j < nclusters; ++j) indexes[j] = j;
         intShuffle(indexes);
@@ -163,6 +224,7 @@ public final class TDigest implements Serializable {
         for (int j: indexes) updateLogic(oldCent[j], oldMass[j]);
     }
 
+    /** Reset this t-digest to an empty state */
     public final void reset() {
         nclusters = 0;
         M = 0.0;
@@ -213,34 +275,60 @@ public final class TDigest implements Serializable {
         return (dL < dR) ? (j - 1) : j;
     }
 
+    /** Obtain the number of clusters in this t-digest 
+     * @return the number of clusters in this t-digest
+     */
     public final int size() {
         return nclusters;
     }
 
+    /** Obtain the total mass sampled by this t-digest
+     * @return the total mass
+     */
     public final double mass() {
         return M;
     }
 
+    /** Obtain the compression setting for this t-digest
+     * @return the compression setting
+     */
     public final double getCompression() {
         return C;
     }
 
+    /** Obtain the maximum discrete setting for this t-digest
+     * @return the maximum discrete setting
+     */
     public final int getMaxDiscrete() {
         return maxDiscrete;
     }
 
+    /** Obtain a reference to this t-digest's cluster center array.
+     * NOTE: this array is not safe to modify, and should be used only in "read-only" mode!
+     * @return a reference to the cluster center array
+     */
     public final double[] getCent() {
         return cent;
     }
 
+    /** Obtain a reference to this t-digest's cluster mass array.
+     * NOTE: this array is not safe to modify, and should be used only in "read-only" mode!
+     * @return a reference to the cluster mass array
+     */
     public final double[] getMass() {
         return mass;
     }
 
+    /** Obtain a reference to this t-digest's cumulative mass array.
+     * This array stores the cumulative masses of clusters in Fenwick Tree format.
+     * NOTE: this array is not safe to modify, and should be used only in "read-only" mode!
+     * @return a reference to the cumulative mass array
+     */
     public final double[] getFT() {
         return ftre;
     }
-    
+
+    /** Returns true if this t-digest is empty, false otherwise. */
     public final boolean isEmpty() {
         return nclusters == 0;
     }
@@ -265,14 +353,30 @@ public final class TDigest implements Serializable {
         return sb.toString();
     }
 
+    /**
+     * Perform a random sampling from the distribution as sketched by this t-digest, in
+     * "probability density" mode.
+     * @return A random number sampled from the sketched distribution
+     */
     public final double samplePDF() {
         return cdfInverse(ThreadLocalRandom.current().nextDouble());
     }
 
+    /**
+     * Perform a random sampling from the distribution as sketched by this t-digest, in
+     * "probability mass" (i.e. discrete) mode.
+     * @return A random number sampled from the sketched distribution
+     */
     public final double samplePMF() {
         return cdfDiscreteInverse(ThreadLocalRandom.current().nextDouble());
     }
 
+    /**
+     * Perform a random sampling from the distribution as sketched by this t-digest,
+     * using "discrete" (PMF) mode if the number of clusters &le; maxDiscrete setting,
+     * and "density" (PDF) mode otherwise.
+     * @return A random number sampled from the sketched distribution
+     */
     public final double sample() {
         if (nclusters <= maxDiscrete) {
             return cdfDiscreteInverse(ThreadLocalRandom.current().nextDouble());
@@ -281,6 +385,12 @@ public final class TDigest implements Serializable {
         }    
     }
 
+    /**
+     * Compute a cumulative probability (CDF) for a numeric value, from the estimated probability
+     * distribution represented by this t-digest sketch.
+     * @param x a numeric value
+     * @return the cumulative probability that a random sample from the distribution is &le; x
+     */
     public final double cdf(double x) {
         int j1 = rcovj(x);
         if (j1 < 0) return 0.0;
@@ -298,11 +408,24 @@ public final class TDigest implements Serializable {
         return Math.min(m2, Math.max(m1, m)) / M;
     }
 
+    /**
+     * Compute a cumulative probability (CDF) for a numeric value, from the estimated probability
+     * distribution represented by this t-digest sketch, assuming sketch is "discrete"
+     * (e.g. if number of clusters &le; maxDiscrete setting)
+     * @param x a numeric value
+     * @return the cumulative probability that a random sample from the distribution is &le; x
+     */
     public final double cdfDiscrete(double x) {
         int j = rcovj(x);
         return ftSum(j) / M;
     }
 
+    /**
+     * Compute the inverse cumulative probability (inverse-CDF) for a quantile value, from the
+     * estimated probability distribution represented by this t-digest sketch.
+     * @param q a quantile value.  The value of q is expected to be on interval [0, 1]
+     * @return the value x such that cdf(x) = q
+     */
     public final double cdfInverse(double q) {
         if (q < 0.0 || q > 1.0) return Double.NaN;
         if (nclusters == 0) return Double.NaN;
@@ -322,6 +445,13 @@ public final class TDigest implements Serializable {
         return Math.min(c2, Math.max(c1, x));
     }
 
+    /**
+     * Compute the inverse cumulative probability (inverse-CDF) for a quantile value, from the
+     * estimated probability distribution represented by this t-digest sketch,
+     * assuming the sketch is "discrete" (e.g. if number of clusters &le; maxDiscrete setting)
+     * @param q a quantile value.  The value of q is expected to be on interval [0, 1]
+     * @return the smallest value x such that q &le; cdf(x)
+     */
     public final double cdfDiscreteInverse(double q) {
         if (q < 0.0 || q > 1.0) return Double.NaN;
         if (nclusters == 0) return Double.NaN;
@@ -466,29 +596,80 @@ public final class TDigest implements Serializable {
         return (int)(K / C);
     }
 
+    /**
+     * The t-digest algorithm will re-cluster itself whenever its number of clusters exceeds
+     * (K/delta).  This value is set such that the threshold is about 10x the heuristically
+     * expected number of clusters for the user-specified delta value.  Generally the number of
+     * clusters will only trigger the corresponding re-clustering threshold when data are being
+     * presented in a non-random order.
+     */
     public static final double K = 10.0 * 50.0;
 
-    /** delta * E[clusters] ~ 50 */
+    /**
+     * Default value for a t-digest compression (aka delta) parameter.
+     * The number of clusters varies, roughly, as
+     * about (50/delta), when data are presented in random order
+     * (it may grow larger if data are not presented randomly).  The default corresponds to
+     * an expected number of clusters of about 100.
+     */
     public static final double COMPRESSION_DEFAULT = 50.0 / 100.0;
 
+    /** Default for the initial cluster array capacity */
     public static final int INIT_SIZE_DEFAULT = 5;
 
+    /** Obtain an empty t-digest with default compression and maximum discrete tracking. 
+     * @return a new empty t-digest
+     */
     public static TDigest empty() {
         return new TDigest(COMPRESSION_DEFAULT, 0, INIT_SIZE_DEFAULT);
     }
 
+    /**
+     * Obtain an empty t-digest.
+     * maxDiscrete defaults to zero.
+     * @param compression sketching compression setting. Higher = more compression.
+     * Must be &gt; 0.
+     * @return a new empty t-digest
+     */
     public static TDigest empty(double compression) {
         return new TDigest(compression, 0, INIT_SIZE_DEFAULT);
     }
 
+    /**
+     * Obtain an empty t-digest.
+     * @param compression sketching compression setting. Higher = more compression.
+     * Must be &gt; 0.
+     * @param maxDiscrete maximum number of unique discrete values to track. Must be &ge; 0.
+     * If this number of values is exceeded, the sketch will begin to operate in 
+     * normal continuous mode.
+     * @return a new empty t-digest
+     */
     public static TDigest empty(double compression, int maxDiscrete) {
         return new TDigest(compression, maxDiscrete, INIT_SIZE_DEFAULT);
     }
 
+    /**
+     * Obtain an empty t-digest.
+     * @param compression sketching compression setting. Higher = more compression.
+     * Must be &gt; 0.
+     * @param maxDiscrete maximum number of unique discrete values to track. Must be &ge; 0.
+     * If this number of values is exceeded, the sketch will begin to operate in 
+     * normal continuous mode.
+     * @param sz initial capacity to use for internal arrays. Must be &gt; 0.
+     * @return a new empty t-digest
+     */
     public static TDigest empty(double compression, int maxDiscrete, int sz) {
         return new TDigest(compression, maxDiscrete, sz);
     }
 
+    /** Merge the argument with smaller mass into the one with larger mass, and return
+     * the larger as the result.
+     * Note this means either (ltd) or (rtd) will be modified.
+     * @param ltd a t-digest
+     * @param rtd another t-digest
+     * @return if ltd has larger mass, then returns <pre>ltd.merge(rtd)</pre>,
+     * otherwise <pre>rtd.merge(ltd)</pre>
+     */
     public static TDigest merge(TDigest ltd, TDigest rtd) {
         if (ltd.size() < rtd.size()) return merge(rtd, ltd);
         if (rtd.size() == 0) return ltd;
@@ -505,18 +686,52 @@ public final class TDigest implements Serializable {
         }
     }
 
+    /**
+     * Sketch data using a t-digest with default compression and maximum discrete tracking.
+     * @param data the data to sketch
+     * @return a t-digest sketch of the data
+     */
     public static TDigest sketch(double[] data) {
         return sketch(data, COMPRESSION_DEFAULT, 0, INIT_SIZE_DEFAULT);
     }
 
+    /**
+     * Sketch data using a t-digest.
+     * maxDiscrete defaults to zero.
+     * @param data the data to sketch
+     * @param compression sketching compression setting. Higher = more compression.
+     * Must be &gt; 0.
+     * @return a t-digest sketch of the data
+     */
     public static TDigest sketch(double[] data, double compression) {
         return sketch(data, compression, 0, INIT_SIZE_DEFAULT);
     }
 
+    /**
+     * Sketch data using a t-digest.
+     * @param data the data to sketch
+     * @param compression sketching compression setting. Higher = more compression.
+     * Must be &gt; 0.
+     * @param maxDiscrete maximum number of unique discrete values to track. Must be &ge; 0.
+     * If this number of values is exceeded, the sketch will begin to operate in 
+     * normal continuous mode.
+     * @return a t-digest sketch of the data
+     */
     public static TDigest sketch(double[] data, double compression, int maxDiscrete) {
         return sketch(data, compression, maxDiscrete, INIT_SIZE_DEFAULT);
     }
 
+    /**
+     * Sketch data using a t-digest.
+     * @param data the data to sketch
+     * @param compression sketching compression setting. Higher = more compression.
+     * Must be &gt; 0.
+     * @param maxDiscrete maximum number of unique discrete values to track. Must be &ge; 0.
+     * If this number of values is exceeded, the sketch will begin to operate in 
+     * normal continuous mode.
+     * @param sz initial capacity to use for internal arrays. Must be &gt; 0.
+     * @return a t-digest sketch of the data
+     */
     public static TDigest sketch(double[] data, double compression, int maxDiscrete, int sz) {
         TDigest td = empty(compression, maxDiscrete, sz);
         for (double x: data) td.update(x, 1.0);
@@ -524,15 +739,15 @@ public final class TDigest implements Serializable {
         return td;
     }
 
-    public static void intShuffle(int[] data) {
+    static void intShuffle(int[] data) {
         intShuffle(data, 0, data.length);
     }
 
-    public static void intShuffle(int[] data, int end) {
+    static void intShuffle(int[] data, int end) {
         intShuffle(data, 0, end);
     }
 
-    public static void intShuffle(int[] data, int beg, int end) {
+    static void intShuffle(int[] data, int beg, int end) {
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         end -= 1;
         while (end > beg) {
