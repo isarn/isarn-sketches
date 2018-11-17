@@ -2,45 +2,45 @@
 // xsbt clean unidoc ghpagesPushSite
 // xsbt -Dsbt.global.base=/home/eje/.sbt/sonatype +publish
 
-//name := "isarn-sketches"
-
-organization := "org.isarnproject"
-
-version := "0.1.3-SNAPSHOT"
-
 scalaVersion := "2.11.12"
 
 crossScalaVersions := Seq("2.11.12", "2.12.6")
 
-pomIncludeRepository := { _ => false }
-
-publishMavenStyle := true
-
-publishTo := {
-  val nexus = "https://oss.sonatype.org/"
-  if (isSnapshot.value)
-    Some("snapshots" at nexus + "content/repositories/snapshots")
-  else
-    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
-}
-
-licenses += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0"))
-
-homepage := Some(url("https://github.com/isarn/isarn-sketches"))
-
-scmInfo := Some(
-  ScmInfo(
-    url("https://github.com/isarn/isarn-sketches"),
-    "scm:git@github.com:isarn/isarn-sketches.git"
-  )
-)
-
-developers := List(
-  Developer(
-    id    = "erikerlandson",
-    name  = "Erik Erlandson",
-    email = "eje@redhat.com",
-    url   = url("https://erikerlandson.github.io/")
+// these do not "inherit" when defined at top level, so
+// define them here for inclusion in each subproject.
+// This also worked: 'xxx in ThisProject := yyy', but you have to do it
+// for each setting below, so this seemed a bit cleaner
+def publishSettings = Seq(
+  version := "0.1.3-SNAPSHOT-pr12",
+  //isSnapshot := true,
+  //publishConfiguration := publishConfiguration.value.withOverwrite(true),
+  //publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
+  skip in publish := (scalaVersion.value != crossScalaVersions.value.head),
+  organization := "org.isarnproject",
+  pomIncludeRepository := { _ => false },
+  publishMavenStyle := true,
+  publishTo := {
+    val nexus = "https://oss.sonatype.org/"
+    if (isSnapshot.value)
+      Some("snapshots" at nexus + "content/repositories/snapshots")
+    else
+      Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+  },
+  licenses += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
+  homepage := Some(url("https://github.com/isarn/isarn-sketches")),
+  scmInfo := Some(
+    ScmInfo(
+      url("https://github.com/isarn/isarn-sketches"),
+      "scm:git@github.com:isarn/isarn-sketches.git"
+    )
+  ),
+  developers := List(
+    Developer(
+      id    = "erikerlandson",
+      name  = "Erik Erlandson",
+      email = "eje@redhat.com",
+      url   = url("https://erikerlandson.github.io/")
+    )
   )
 )
 
@@ -78,10 +78,14 @@ previewFixedPort := Some(4444)
 
 lazy val isarn_sketches_java = (project in file("isarn-sketches-java"))
   .settings(name := "isarn-sketches-java")
-  .settings(crossPaths := false) // drop off Scala suffix from artifact names
-  .settings(autoScalaLibrary := false) // exclude scala-library from dependencies
   .enablePlugins(GenJavadocPlugin, PublishJavadocPlugin)
   .settings(siteSubProjectSettings :_*)
+  .settings(
+    skip in publish := (scalaVersion.value != crossScalaVersions.value.head),
+    crossPaths := false,                            // drop off Scala suffix from artifact names
+    autoScalaLibrary := false                       // exclude scala-library from dependencies
+    )
+  .settings(publishSettings :_*)
 
 lazy val isarn_sketches = (project in file("."))
   .aggregate(isarn_sketches_java)
@@ -95,3 +99,4 @@ lazy val isarn_sketches = (project in file("."))
       "org.scalatest" %% "scalatest" % "3.0.5" % Test,
       "org.apache.commons" % "commons-math3" % "3.6.1" % Test)
       )
+  .settings(publishSettings :_*)
