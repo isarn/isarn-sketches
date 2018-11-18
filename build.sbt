@@ -1,6 +1,8 @@
 // xsbt clean unidoc previewSite
 // xsbt clean unidoc ghpagesPushSite
-// xsbt -Dsbt.global.base=/home/eje/.sbt/sonatype +publish
+// xsbt -Dsbt.global.base=/home/eje/.sbt/sonatype +isarn_sketches/publish
+// publish isarn-sketches-java for exactly one scala version:
+// xsbt -Dsbt.global.base=/home/eje/.sbt/sonatype isarn_sketches_java/publish
 
 scalaVersion := "2.11.12"
 
@@ -15,7 +17,6 @@ def publishSettings = Seq(
   //isSnapshot := true,
   //publishConfiguration := publishConfiguration.value.withOverwrite(true),
   //publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
-  skip in publish := (scalaVersion.value != crossScalaVersions.value.head),
   organization := "org.isarnproject",
   pomIncludeRepository := { _ => false },
   publishMavenStyle := true,
@@ -81,7 +82,6 @@ lazy val isarn_sketches_java = (project in file("isarn-sketches-java"))
   .enablePlugins(GenJavadocPlugin, PublishJavadocPlugin)
   .settings(siteSubProjectSettings :_*)
   .settings(
-    skip in publish := (scalaVersion.value != crossScalaVersions.value.head),
     crossPaths := false,                            // drop off Scala suffix from artifact names
     autoScalaLibrary := false                       // exclude scala-library from dependencies
     )
@@ -92,6 +92,8 @@ lazy val isarn_sketches = (project in file("."))
   .dependsOn(isarn_sketches_java)
   .settings(name := "isarn-sketches")
   .settings(
+    // isarn_sketches_java needs to be published separately to work with 'crossPaths := false'
+    aggregate in publish := false,
     libraryDependencies ++= Seq(
       "org.isarnproject" %% "isarn-algebra-api" % "0.0.3",
       "org.isarnproject" %% "isarn-collections" % "0.0.4",
