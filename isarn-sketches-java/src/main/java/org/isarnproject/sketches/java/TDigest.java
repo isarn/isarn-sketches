@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.io.Serializable;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 
 /**
  * A t-digest sketch of sampled numeric data
@@ -359,7 +360,17 @@ public final class TDigest implements Serializable {
      * @return A random number sampled from the sketched distribution
      */
     public final double samplePDF() {
-        return cdfInverse(ThreadLocalRandom.current().nextDouble());
+        return samplePDF(ThreadLocalRandom.current());
+    }
+
+    /**
+     * Perform a random sampling from the distribution as sketched by this t-digest, in
+     * "probability density" mode.
+     * @param prng a (pseudo) random number generator to use for the random sampling
+     * @return A random number sampled from the sketched distribution
+     */
+    public final double samplePDF(Random prng) {
+        return cdfInverse(prng.nextDouble());
     }
 
     /**
@@ -368,7 +379,17 @@ public final class TDigest implements Serializable {
      * @return A random number sampled from the sketched distribution
      */
     public final double samplePMF() {
-        return cdfDiscreteInverse(ThreadLocalRandom.current().nextDouble());
+        return samplePMF(ThreadLocalRandom.current());
+    }
+
+    /**
+     * Perform a random sampling from the distribution as sketched by this t-digest, in
+     * "probability mass" (i.e. discrete) mode.
+     * @param prng a (pseudo) random number generator to use for the random sampling
+     * @return A random number sampled from the sketched distribution
+     */
+    public final double samplePMF(Random prng) {
+        return cdfDiscreteInverse(prng.nextDouble());
     }
 
     /**
@@ -378,10 +399,21 @@ public final class TDigest implements Serializable {
      * @return A random number sampled from the sketched distribution
      */
     public final double sample() {
+        return sample(ThreadLocalRandom.current());
+    }
+
+    /**
+     * Perform a random sampling from the distribution as sketched by this t-digest,
+     * using "discrete" (PMF) mode if the number of clusters &le; maxDiscrete setting,
+     * and "density" (PDF) mode otherwise.
+     * @param prng a (pseudo) random number generator to use for the random sampling
+     * @return A random number sampled from the sketched distribution
+     */
+    public final double sample(Random prng) {
         if (nclusters <= maxDiscrete) {
-            return cdfDiscreteInverse(ThreadLocalRandom.current().nextDouble());
+            return cdfDiscreteInverse(prng.nextDouble());
         } else {
-            return cdfInverse(ThreadLocalRandom.current().nextDouble());
+            return cdfInverse(prng.nextDouble());
         }    
     }
 
