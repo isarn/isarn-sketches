@@ -307,7 +307,7 @@ public final class TDigest implements Serializable {
      * NOTE: this array is not safe to modify, and should be used only in "read-only" mode!
      * @return a reference to the cluster center array
      */
-    public final double[] getCent() {
+    public final double[] getCentUnsafe() {
         return cent;
     }
 
@@ -315,7 +315,7 @@ public final class TDigest implements Serializable {
      * NOTE: this array is not safe to modify, and should be used only in "read-only" mode!
      * @return a reference to the cluster mass array
      */
-    public final double[] getMass() {
+    public final double[] getMassUnsafe() {
         return mass;
     }
 
@@ -324,7 +324,7 @@ public final class TDigest implements Serializable {
      * NOTE: this array is not safe to modify, and should be used only in "read-only" mode!
      * @return a reference to the cumulative mass array
      */
-    public final double[] getFT() {
+    public final double[] getFTUnsafe() {
         return ftre;
     }
 
