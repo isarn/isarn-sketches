@@ -22,14 +22,14 @@ limitations under the License.
 
 scalaVersion := "2.11.12"
 
-crossScalaVersions := Seq("2.11.12", "2.12.6")
+crossScalaVersions := Seq("2.11.12", "2.12.8")
 
 // these do not "inherit" when defined at top level, so
 // define them here for inclusion in each subproject.
 // This also worked: 'xxx in ThisProject := yyy', but you have to do it
 // for each setting below, so this seemed a bit cleaner
 def publishSettings = Seq(
-  version := "0.1.3-SNAPSHOT-pr12",
+  version := "0.2.0-SNAPSHOT",
   //isSnapshot := true,
   //publishConfiguration := publishConfiguration.value.withOverwrite(true),
   //publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
