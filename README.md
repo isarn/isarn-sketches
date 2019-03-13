@@ -2,8 +2,8 @@
 Sketching data structures
 
 ### API documentation
-https://isarn.github.io/isarn-sketches/scala/api/
-https://isarn.github.io/isarn-sketches/java/api/
+- https://isarn.github.io/isarn-sketches/scala/api/
+- https://isarn.github.io/isarn-sketches/java/api/
 
 ### Compatibility
 isarn-sketches can operate with [Algebird](https://twitter.github.io/algebird/) via the
@@ -14,7 +14,11 @@ isarn-sketches can also operate with [Apache Spark](https://github.com/apache/sp
 ### How to use in your project
 
 ``` scala
-libraryDependencies += "org.isarnproject" %% "isarn-sketches" % "0.1.2"
+// isarn-sketches
+libraryDependencies += "org.isarnproject" %% "isarn-sketches" % "0.2.0"
+
+// isarn-sketches-java
+libraryDependencies += "org.isarnproject" % "isarn-sketches-java" % "0.2.0"
 ```
 
 ### t-digest
