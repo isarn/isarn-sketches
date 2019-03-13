@@ -2,7 +2,8 @@
 Sketching data structures
 
 ### API documentation
-https://isarn.github.io/isarn-sketches/latest/api/
+https://isarn.github.io/isarn-sketches/scala/api/
+https://isarn.github.io/isarn-sketches/java/api/
 
 ### Compatibility
 isarn-sketches can operate with [Algebird](https://twitter.github.io/algebird/) via the
