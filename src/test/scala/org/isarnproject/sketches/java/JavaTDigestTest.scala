@@ -174,6 +174,64 @@ class JavaTDigestTest extends FlatSpec with Matchers {
     testSamplingPMF(td, gd) should be (true)
   }
 
+  it should "support copy constructor" in {
+    import org.apache.commons.math3.distribution.NormalDistribution
+
+    val dist = new NormalDistribution()
+    dist.reseedRandomGenerator(seed)
+    val data = Array.fill(ss) { dist.sample }
+    val td1 = TDigest.sketch(data, delta)
+    val td2 = new TDigest(td1)
+    (td2.equals(td1)) should be (true)
+    (td1.equals(td2)) should be (true)
+
+    // add more data and re-check equality to ensure
+    // that all state for future updates was correctly copied
+    for { x <- data } {
+      td1.update(x)
+      td2.update(x)
+    }
+    (td2.equals(td1)) should be (true)
+    (td1.equals(td2)) should be (true)
+  }
+
+  def testTDClose(td1: TDigest, td2: TDigest, eps: Double = 1e-6): Unit = {
+    td1.getCompression() should be (td2.getCompression())
+    td1.getMaxDiscrete() should be (td2.getMaxDiscrete())
+    td1.size() should be (td2.size())
+    td1.mass() should be (td2.mass() +- eps)
+    for { j <- 0 until td1.size() } {
+      td1.getCentUnsafe()(j) should be (td2.getCentUnsafe()(j) +- eps)
+      td1.getMassUnsafe()(j) should be (td2.getMassUnsafe()(j) +- eps)
+      td1.getFTUnsafe()(1 + j) should be (td2.getFTUnsafe()(1 + j) +- eps)
+    }
+  }
+
+  it should "support dser constructor" in {
+    import java.util.Arrays;
+    import org.apache.commons.math3.distribution.NormalDistribution
+
+    val dist = new NormalDistribution()
+    dist.reseedRandomGenerator(seed)
+    val data = Array.fill(ss) { dist.sample }
+    val td1 = TDigest.sketch(data, delta)
+    val td2 = new TDigest(
+      td1.getCompression(),
+      td1.getMaxDiscrete(),
+      Arrays.copyOf(td1.getCentUnsafe(), td1.size()),
+      Arrays.copyOf(td1.getMassUnsafe(), td1.size())
+    )
+    testTDClose(td1, td2, 1e-9)
+
+    // add more data and re-check equality to ensure
+    // that all state for future updates was correctly copied
+    for { x <- data } {
+      td1.update(x)
+      td2.update(x)
+    }
+    testTDClose(td1, td2, 1e-9)
+  }
+
   it should "serialize and deserialize" in {
     import org.apache.commons.math3.distribution.NormalDistribution
 

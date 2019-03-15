@@ -104,6 +104,38 @@ public final class TDigest implements Serializable {
         ftre[0] = 0.0;        
     }
 
+    /**
+     * Construct a t-digest from a list of cluster centers and masses.
+     * Object deserialization is one of the intended use cases for this constructor.
+     * NOTE: This constructor assumes the 'cent' and 'mass' arrays will be owned
+     * by the new t-digest object.
+     * @param compression sketching compression setting. Higher = more compression.
+     * Must be &gt; 0.
+     * @param maxDiscrete maximum number of unique discrete values to track. Must be &ge; 0.
+     * If this number of values is exceeded, the sketch will begin to operate in 
+     * @param cent the list of cluster centers. Assumed to be in sorted order.
+     * This array is assumed to be owned by the t-digest object after construction.
+     * @param mass a list of cluster masses. Assumed to be parallel to centers.
+     * This array is assumed to be owned by the t-digest object after construction.
+     */
+    public TDigest(double compression, int maxDiscrete, double cent[], double mass[]) {
+        assert compression > 0.0;
+        assert maxDiscrete >= 0;
+        assert mass.length == cent.length;
+        this.nclusters = mass.length;
+        this.C = compression;
+        this.maxDiscrete = maxDiscrete;
+        this.cent = cent;
+        this.mass = mass;
+        this.ftre = new double[1 + nclusters];
+        Arrays.fill(ftre, 0, 1 + nclusters, 0.0);
+        this.M = 0.0;
+        for (int j = 0; j < nclusters; ++j) {
+            M += mass[j];
+            ftInc(j, mass[j]);
+        }
+    }
+
     /** Construct a deep copy of another t-digest */
     public TDigest(TDigest that) {
         C = that.C;
