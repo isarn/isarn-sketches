@@ -15,10 +15,10 @@ isarn-sketches can also operate with [Apache Spark](https://github.com/apache/sp
 
 ``` scala
 // isarn-sketches
-libraryDependencies += "org.isarnproject" %% "isarn-sketches" % "0.2.0"
+libraryDependencies += "org.isarnproject" %% "isarn-sketches" % "0.2.1"
 
 // isarn-sketches-java
-libraryDependencies += "org.isarnproject" % "isarn-sketches-java" % "0.2.0"
+libraryDependencies += "org.isarnproject" % "isarn-sketches-java" % "0.2.1"
 ```
 
 ### t-digest

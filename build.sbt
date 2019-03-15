@@ -29,7 +29,7 @@ crossScalaVersions := Seq("2.11.12", "2.12.8")
 // This also worked: 'xxx in ThisProject := yyy', but you have to do it
 // for each setting below, so this seemed a bit cleaner
 def publishSettings = Seq(
-  version := "0.2.1-SNAPSHOT",
+  version := "0.2.2-SNAPSHOT",
   //isSnapshot := true,
   //publishConfiguration := publishConfiguration.value.withOverwrite(true),
   //publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
