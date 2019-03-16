@@ -211,25 +211,44 @@ class JavaTDigestTest extends FlatSpec with Matchers {
     import java.util.Arrays;
     import org.apache.commons.math3.distribution.NormalDistribution
 
+    val eps = 1e-9
+
     val dist = new NormalDistribution()
     dist.reseedRandomGenerator(seed)
     val data = Array.fill(ss) { dist.sample }
-    val td1 = TDigest.sketch(data, delta)
+
+    // test constructing empty t-digests
+    val td1 = new TDigest(0.5, 0, Array.empty[Double], Array.empty[Double])
     val td2 = new TDigest(
       td1.getCompression(),
       td1.getMaxDiscrete(),
       Arrays.copyOf(td1.getCentUnsafe(), td1.size()),
       Arrays.copyOf(td1.getMassUnsafe(), td1.size())
     )
-    testTDClose(td1, td2, 1e-9)
+    testTDClose(td1, td2, eps)
 
-    // add more data and re-check equality to ensure
-    // that all state for future updates was correctly copied
+    // test sketching from empty state
     for { x <- data } {
       td1.update(x)
       td2.update(x)
+    }    
+    testTDClose(td1, td2, eps)
+
+    // copy from non-empty state
+    val td3 = new TDigest(
+      td1.getCompression(),
+      td1.getMaxDiscrete(),
+      Arrays.copyOf(td1.getCentUnsafe(), td1.size()),
+      Arrays.copyOf(td1.getMassUnsafe(), td1.size())
+    )
+    testTDClose(td1, td3, eps)
+
+    // test from non-empty state
+    for { x <- data } {
+      td1.update(x)
+      td3.update(x)
     }
-    testTDClose(td1, td2, 1e-9)
+    testTDClose(td1, td3, eps)
   }
 
   it should "serialize and deserialize" in {

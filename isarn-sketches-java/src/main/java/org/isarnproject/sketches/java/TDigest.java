@@ -125,9 +125,17 @@ public final class TDigest implements Serializable {
         this.nclusters = mass.length;
         this.C = compression;
         this.maxDiscrete = maxDiscrete;
-        this.cent = cent;
-        this.mass = mass;
-        this.ftre = new double[1 + nclusters];
+        int sz = nclusters;
+        if (sz == 0) {
+            // cent, mass and ftre cannot be zero length
+            sz = 1;
+            this.cent = new double[sz];
+            this.mass = new double[sz];
+        } else {
+            this.cent = cent;
+            this.mass = mass;
+        }
+        this.ftre = new double[1 + sz];
         Arrays.fill(ftre, 0, 1 + nclusters, 0.0);
         this.M = 0.0;
         for (int j = 0; j < nclusters; ++j) {
