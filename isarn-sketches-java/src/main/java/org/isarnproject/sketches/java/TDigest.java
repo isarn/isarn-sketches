@@ -42,7 +42,7 @@ import java.util.Random;
  * double cdfi = sketch.cdfInverse(0.5)
  * </pre>
  */
-public final class TDigest implements Serializable {
+public class TDigest implements Serializable {
     /** compression setting (delta in original paper) */
     protected final double C;
     /** maximum number of unique discrete values to track */
@@ -108,7 +108,8 @@ public final class TDigest implements Serializable {
      * Construct a t-digest from a list of cluster centers and masses.
      * Object deserialization is one of the intended use cases for this constructor.
      * NOTE: This constructor assumes the 'cent' and 'mass' arrays will be owned
-     * by the new t-digest object.
+     * by the new t-digest object. If 'cent' and 'mass' are both null then an empty cluster
+     * will be created.
      * @param compression sketching compression setting. Higher = more compression.
      * Must be &gt; 0.
      * @param maxDiscrete maximum number of unique discrete values to track. Must be &ge; 0.
@@ -121,20 +122,24 @@ public final class TDigest implements Serializable {
     public TDigest(double compression, int maxDiscrete, double cent[], double mass[]) {
         assert compression > 0.0;
         assert maxDiscrete >= 0;
-        assert mass.length == cent.length;
-        this.nclusters = mass.length;
         this.C = compression;
         this.maxDiscrete = maxDiscrete;
+        assert (cent != null && mass != null) || (cent == null && mass == null);
+        this.nclusters = (cent != null) ? cent.length : 0;
         int sz = nclusters;
         if (sz == 0) {
             // cent, mass and ftre cannot be zero length
-            sz = 1;
+            sz = INIT_SIZE_DEFAULT;
             this.cent = new double[sz];
             this.mass = new double[sz];
         } else {
             this.cent = cent;
             this.mass = mass;
         }
+        assert cent != null && mass != null;
+        assert cent.length == sz;
+        assert cent.length == mass.length;
+        assert cent.length > 0;
         this.ftre = new double[1 + sz];
         Arrays.fill(ftre, 0, 1 + nclusters, 0.0);
         this.M = 0.0;
