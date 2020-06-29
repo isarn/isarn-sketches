@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// xsbt clean unidoc previewSite
-// xsbt clean unidoc ghpagesPushSite
-// xsbt -Dsbt.global.base=/home/eje/.sbt/sonatype +isarn_sketches/publish
+// sbt clean unidoc previewSite
+// sbt clean unidoc ghpagesPushSite
+// sbt +isarn_sketches/publish
 // publish isarn-sketches-java for exactly one scala version:
-// xsbt -Dsbt.global.base=/home/eje/.sbt/sonatype isarn_sketches_java/publish
+// sbt isarn_sketches_java/publish
 
-scalaVersion := "2.11.12"
+scalaVersion := "2.12.8"
 
 crossScalaVersions := Seq("2.11.12", "2.12.8")
 
@@ -29,10 +29,10 @@ crossScalaVersions := Seq("2.11.12", "2.12.8")
 // This also worked: 'xxx in ThisProject := yyy', but you have to do it
 // for each setting below, so this seemed a bit cleaner
 def publishSettings = Seq(
-  version := "0.2.3-SNAPSHOT",
+  version := "0.3.0",
   //isSnapshot := true,
   //publishConfiguration := publishConfiguration.value.withOverwrite(true),
-  //publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
+  publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
   organization := "org.isarnproject",
   pomIncludeRepository := { _ => false },
   publishMavenStyle := true,
