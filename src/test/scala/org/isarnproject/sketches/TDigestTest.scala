@@ -16,13 +16,16 @@ limitations under the License.
 
 package org.isarnproject.sketches
 
-import org.scalatest._
-
 import org.isarnproject.scalatest.matchers.seq._
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AsyncWordSpec
 
-class TDigestTest extends FlatSpec with Matchers {
+
+class TDigestTest extends AsyncWordSpec with Matchers {
+
   import org.apache.commons.math3.distribution.RealDistribution
   import org.apache.commons.math3.distribution.IntegerDistribution
+
 
   val seed = 235711L
   scala.util.Random.setSeed(seed)
@@ -41,7 +44,7 @@ class TDigestTest extends FlatSpec with Matchers {
       .map(x => math.abs(td.cdf(x) - dist.cumulativeProbability(x))).max
 
     val dInv = (0.01 to 0.99 by 0.01).iterator
-      .map(x => math.abs(td.cdfInverse(x) - dist.inverseCumulativeProbability(x))).max / stdv
+                 .map(x => math.abs(td.cdfInverse(x) - dist.inverseCumulativeProbability(x))).max / stdv
 
     val pass = d <= maxD && dInv <= maxDI
     if (!pass) Console.err.println(s"testTDvsDist failure: d= $d  dInv= $dInv")
@@ -59,7 +62,7 @@ class TDigestTest extends FlatSpec with Matchers {
   }
 
   def testSamplingPMF(td: TDigest, dist: IntegerDistribution): Boolean = {
-    td.nclusters should be <=(td.maxDiscrete)
+    td.nclusters should be <= (td.maxDiscrete)
     val tdSamples = Array.fill(10000) { td.samplePMF }
     val distSamples = Array.fill(10000) { dist.sample.toDouble }
     val kst = new org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest()
@@ -103,91 +106,94 @@ class TDigestTest extends FlatSpec with Matchers {
     testMonotoneCDF(dist) && testMonotoneCDFI(dist)
   }
 
-  it should "sketch a uniform distribution" in {
-    import org.apache.commons.math3.distribution.UniformRealDistribution
-    val dist = new UniformRealDistribution()
-    testDistribution(dist, math.sqrt(dist.getNumericalVariance())) should be (true)
-  }
+  it should {
 
-  it should "sketch a normal distribution" in {
-    import org.apache.commons.math3.distribution.NormalDistribution
-    val dist = new NormalDistribution()
-    testDistribution(dist, math.sqrt(dist.getNumericalVariance())) should be (true)
-  }
+    "sketch a uniform distribution" in {
+      import org.apache.commons.math3.distribution.UniformRealDistribution
+      val dist = new UniformRealDistribution()
+      testDistribution(dist, math.sqrt(dist.getNumericalVariance())) should be(true)
+    }
 
-  it should "sketch an exponential distribution" in {
-    import org.apache.commons.math3.distribution.ExponentialDistribution
-    val dist = new ExponentialDistribution(1.0)
-    testDistribution(dist, math.sqrt(dist.getNumericalVariance())) should be (true)
-  }
+    "sketch a normal distribution" in {
+      import org.apache.commons.math3.distribution.NormalDistribution
+      val dist = new NormalDistribution()
+      testDistribution(dist, math.sqrt(dist.getNumericalVariance())) should be(true)
+    }
 
-  it should "aggregate with another t-digest using ++" in {
-    import org.apache.commons.math3.distribution.NormalDistribution
-    val dist = new NormalDistribution()
-    dist.reseedRandomGenerator(seed)
+    "sketch an exponential distribution" in {
+      import org.apache.commons.math3.distribution.ExponentialDistribution
+      val dist = new ExponentialDistribution(1.0)
+      testDistribution(dist, math.sqrt(dist.getNumericalVariance())) should be(true)
+    }
+
+    "aggregate with another t-digest using ++" in {
+      import org.apache.commons.math3.distribution.NormalDistribution
+      val dist = new NormalDistribution()
+      dist.reseedRandomGenerator(seed)
 
     val td1 = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
     val td2 = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
 
-    testTDvsDist(td1 ++ td2, dist, math.sqrt(dist.getNumericalVariance())) should be (true)
-  }
+      testTDvsDist(td1 ++ td2, dist, math.sqrt(dist.getNumericalVariance())) should be(true)
+    }
 
-  it should "respect monotonic cdf and inverse" in {
-    import org.apache.commons.math3.distribution.ExponentialDistribution
-    import org.apache.commons.math3.distribution.NormalDistribution
-    import org.apache.commons.math3.distribution.UniformRealDistribution
+    "respect monotonic cdf and inverse" in {
+      import org.apache.commons.math3.distribution.ExponentialDistribution
+      import org.apache.commons.math3.distribution.NormalDistribution
+      import org.apache.commons.math3.distribution.UniformRealDistribution
 
-    testMonotone(new UniformRealDistribution()) should be (true)
-    testMonotone(new ExponentialDistribution(1.0)) should be (true)
-    testMonotone(new NormalDistribution(0.0, 0.1)) should be (true)
-  }
+      testMonotone(new UniformRealDistribution()) should be(true)
+      testMonotone(new ExponentialDistribution(1.0)) should be(true)
+      testMonotone(new NormalDistribution(0.0, 0.1)) should be(true)
+    }
 
-  it should "respect maxDiscrete parameter" in {
-    import org.apache.commons.math3.distribution.GeometricDistribution
-    val gd = new GeometricDistribution(0.33)
-    val data = gd.sample(1000000)
-    val dataUniq = data.distinct.sorted
-    val kt = dataUniq.map(_.toDouble).toSet
-    val td = TDigest.sketch(data, maxDiscrete = 50)
-    val clust = td.clusters
-    clust.keys.toSet should be (kt)
-    val D = clust.keys.map { x => td.cdfDiscrete(x) }
-      .zip(dataUniq.map { k => gd.cumulativeProbability(k) })
-      .map { case (p1, p2) => math.abs(p1 - p2) }
-      .max
-    (D <= 0.01) should be (true)
-    testSamplingPMF(td, gd) should be (true)
-  }
+    "respect maxDiscrete parameter" in {
+      import org.apache.commons.math3.distribution.GeometricDistribution
+      val gd = new GeometricDistribution(0.33)
+      val data = gd.sample(1000000)
+      val dataUniq = data.distinct.sorted
+      val kt = dataUniq.map(_.toDouble).toSet
+      val td = TDigest.sketch(data, maxDiscrete = 50)
+      val clust = td.clusters
+      clust.keys.toSet should be(kt)
+      val D = clust.keys.map { x => td.cdfDiscrete(x) }
+        .zip(dataUniq.map { k => gd.cumulativeProbability(k) })
+        .map { case (p1, p2) => math.abs(p1 - p2) }
+        .max
+      (D <= 0.01) should be(true)
+      testSamplingPMF(td, gd) should be(true)
+    }
 
-  it should "respect maxDiscrete parameter over ++" in {
-    import org.apache.commons.math3.distribution.GeometricDistribution
-    val gd = new GeometricDistribution(0.33)
+    "respect maxDiscrete parameter over ++" in {
+      import org.apache.commons.math3.distribution.GeometricDistribution
+      val gd = new GeometricDistribution(0.33)
     val tdvec = Vector.fill(10) { TDigest.sketch(gd.sample(100000), maxDiscrete = 50) }
-    val td = tdvec.reduce(_ ++ _)
-    val clust = td.clusters
-    clust.keys.map(_.toInt).map(_.toDouble) should beEqSeq(clust.keys)
-    val D = clust.keys.map { x => td.cdfDiscrete(x) }
-      .zip(clust.keys.map(_.toInt).map { k => gd.cumulativeProbability(k) })
-      .map { case (p1, p2) => math.abs(p1 - p2) }
-      .max
-    (D <= 0.01) should be (true)
-    testSamplingPMF(td, gd) should be (true)
-  }
+      val td = tdvec.reduce(_ ++ _)
+      val clust = td.clusters
+      clust.keys.map(_.toInt).map(_.toDouble) should beEqSeq(clust.keys)
+      val D = clust.keys.map { x => td.cdfDiscrete(x) }
+        .zip(clust.keys.map(_.toInt).map { k => gd.cumulativeProbability(k) })
+        .map { case (p1, p2) => math.abs(p1 - p2) }
+        .max
+      (D <= 0.01) should be(true)
+      testSamplingPMF(td, gd) should be(true)
+    }
 
-  it should "serialize and deserialize" in {
-    import org.apache.commons.math3.distribution.NormalDistribution
+    "serialize and deserialize" in {
+      import org.apache.commons.math3.distribution.NormalDistribution
 
-    import org.isarnproject.scalatest.serde.roundTripSerDe
+      import org.isarnproject.scalatest.serde.roundTripSerDe
 
-    val dist = new NormalDistribution()
-    dist.reseedRandomGenerator(seed)
+      val dist = new NormalDistribution()
+      dist.reseedRandomGenerator(seed)
 
     val tdo = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
 
-    val tdi = roundTripSerDe(tdo)
+      val tdi = roundTripSerDe(tdo)
 
-    (tdi == tdo) should be (true)
+      (tdi == tdo) should be(true)
 
-    testTDvsDist(tdi, dist, math.sqrt(dist.getNumericalVariance())) should be (true)
+      testTDvsDist(tdi, dist, math.sqrt(dist.getNumericalVariance())) should be(true)
+    }
   }
 }

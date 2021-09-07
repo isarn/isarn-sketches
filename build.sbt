@@ -20,9 +20,9 @@ limitations under the License.
 // publish isarn-sketches-java for exactly one scala version:
 // sbt isarn_sketches_java/publish
 
-scalaVersion := "2.12.8"
+scalaVersion := "2.12.14"
 
-crossScalaVersions := Seq("2.11.12", "2.12.8")
+crossScalaVersions := Seq("2.11.12", "2.12.14")
 
 // these do not "inherit" when defined at top level, so
 // define them here for inclusion in each subproject.
@@ -95,7 +95,7 @@ previewFixedPort := Some(4444)
 
 lazy val isarn_sketches_java = (project in file("isarn-sketches-java"))
   .settings(name := "isarn-sketches-java")
-  .enablePlugins(GenJavadocPlugin, PublishJavadocPlugin)
+  //.enablePlugins(GenJavadocPlugin, PublishJavadocPlugin)
   .settings(siteSubProjectSettings :_*)
   .settings(
     crossPaths := false,                            // drop off Scala suffix from artifact names
@@ -114,7 +114,7 @@ lazy val isarn_sketches = (project in file("."))
       "org.isarnproject" %% "isarn-algebra-api" % "0.0.3",
       "org.isarnproject" %% "isarn-collections" % "0.0.4",
       "org.isarnproject" %% "isarn-scalatest" % "0.0.3" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.5" % Test,
       "org.apache.commons" % "commons-math3" % "3.6.1" % Test)
       )
   .settings(publishSettings :_*)
