@@ -52,12 +52,8 @@ class JavaTDigestTest extends AsyncWordSpec with Matchers {
   }
 
   def testSamplingPDF(td: TDigest, dist: RealDistribution): Boolean = {
-    val tdSamples = Array.fill(10000) {
-      td.samplePDF
-    }
-    val distSamples = Array.fill(10000) {
-      dist.sample
-    }
+    val tdSamples = Array.fill(10000) { td.samplePDF }
+    val distSamples = Array.fill(10000) { dist.sample }
     val kst = new org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest()
     val d = kst.kolmogorovSmirnovStatistic(tdSamples, distSamples)
     val pass = d <= maxD
@@ -67,12 +63,8 @@ class JavaTDigestTest extends AsyncWordSpec with Matchers {
 
   def testSamplingPMF(td: TDigest, dist: IntegerDistribution): Boolean = {
     td.nclusters should be <= (td.maxDiscrete)
-    val tdSamples = Array.fill(10000) {
-      td.samplePMF
-    }
-    val distSamples = Array.fill(10000) {
-      dist.sample.toDouble
-    }
+    val tdSamples = Array.fill(10000) { td.samplePMF }
+    val distSamples = Array.fill(10000) { dist.sample.toDouble }
     val kst = new org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest()
     val d = kst.kolmogorovSmirnovStatistic(tdSamples, distSamples)
     val pass = d <= maxD
@@ -83,18 +75,14 @@ class JavaTDigestTest extends AsyncWordSpec with Matchers {
   def testDistribution(dist: RealDistribution, stdv: Double): Boolean = {
     dist.reseedRandomGenerator(seed)
 
-    val td = TDigest.sketch(Array.fill(ss) {
-      dist.sample
-    }, delta)
+    val td = TDigest.sketch(Array.fill(ss) { dist.sample }, delta)
 
     testTDvsDist(td, dist, stdv) && testSamplingPDF(td, dist)
   }
 
   def testMonotoneCDF(dist: RealDistribution): Boolean = {
     dist.reseedRandomGenerator(seed)
-    val td = TDigest.sketch(Array.fill(ss) {
-      dist.sample
-    }, delta)
+    val td = TDigest.sketch(Array.fill(ss) { dist.sample }, delta)
     val (xmin, xmax) = (td.cent(0), td.cent(td.nclusters - 1))
     val step = (xmax - xmin) / 100000
     val t = (xmin to xmax by step).iterator.map(x => td.cdf(x)).sliding(2).map(w => w(1) - w(0)).min
@@ -105,9 +93,7 @@ class JavaTDigestTest extends AsyncWordSpec with Matchers {
 
   def testMonotoneCDFI(dist: RealDistribution): Boolean = {
     dist.reseedRandomGenerator(seed)
-    val td = TDigest.sketch(Array.fill(ss) {
-      dist.sample
-    }, delta)
+    val td = TDigest.sketch(Array.fill(ss) { dist.sample }, delta)
     val (xmin, xmax) = (0.0, 1.0)
     val step = (xmax - xmin) / 100000
     val t = (xmin to xmax by step).iterator.map(q => td.cdfInverse(q)).sliding(2).map(w => w(1) - w(0)).min
@@ -144,12 +130,8 @@ class JavaTDigestTest extends AsyncWordSpec with Matchers {
       val dist = new NormalDistribution()
       dist.reseedRandomGenerator(seed)
 
-      val td1 = TDigest.sketch(Array.fill(ss) {
-        dist.sample
-      }, delta)
-      val td2 = TDigest.sketch(Array.fill(ss) {
-        dist.sample
-      }, delta)
+    val td1 = TDigest.sketch(Array.fill(ss) { dist.sample }, delta)
+    val td2 = TDigest.sketch(Array.fill(ss) { dist.sample }, delta)
 
       testTDvsDist(TDigest.merge(td1, td2), dist, math.sqrt(dist.getNumericalVariance())) should be(true)
     }
@@ -184,9 +166,7 @@ class JavaTDigestTest extends AsyncWordSpec with Matchers {
     "respect maxDiscrete parameter over merge" in {
       import org.apache.commons.math3.distribution.GeometricDistribution
       val gd = new GeometricDistribution(0.33)
-      val tdvec = Vector.fill(10) {
-        TDigest.sketch(gd.sample(100000).map(_.toDouble), delta, 50)
-      }
+    val tdvec = Vector.fill(10) { TDigest.sketch(gd.sample(100000).map(_.toDouble), delta, 50) }
       val td = tdvec.reduce((a, b) => TDigest.merge(a, b))
       val clust = td.cent
       clust.map(_.toInt).map(_.toDouble).toVector should beEqSeq(clust.toVector)
@@ -203,9 +183,7 @@ class JavaTDigestTest extends AsyncWordSpec with Matchers {
 
       val dist = new NormalDistribution()
       dist.reseedRandomGenerator(seed)
-      val data = Array.fill(ss) {
-        dist.sample
-      }
+    val data = Array.fill(ss) { dist.sample }
       val td1 = TDigest.sketch(data, delta)
       val td2 = new TDigest(td1)
       (td2.equals(td1)) should be(true)
@@ -241,9 +219,7 @@ class JavaTDigestTest extends AsyncWordSpec with Matchers {
 
       val dist = new NormalDistribution()
       dist.reseedRandomGenerator(seed)
-      val data = Array.fill(ss) {
-        dist.sample
-      }
+    val data = Array.fill(ss) { dist.sample }
 
       // test constructing empty t-digests
       val td1 = new TDigest(0.5, 0, Array.empty[Double], Array.empty[Double])
@@ -287,9 +263,7 @@ class JavaTDigestTest extends AsyncWordSpec with Matchers {
       val dist = new NormalDistribution()
       dist.reseedRandomGenerator(seed)
 
-      val tdo = TDigest.sketch(Array.fill(ss) {
-        dist.sample
-      }, delta)
+    val tdo = TDigest.sketch(Array.fill(ss) { dist.sample }, delta)
 
       val tdi = roundTripSerDe(tdo)
 

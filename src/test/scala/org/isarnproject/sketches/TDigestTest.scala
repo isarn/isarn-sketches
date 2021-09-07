@@ -52,12 +52,8 @@ class TDigestTest extends AsyncWordSpec with Matchers {
   }
 
   def testSamplingPDF(td: TDigest, dist: RealDistribution): Boolean = {
-    val tdSamples = Array.fill(10000) {
-      td.samplePDF
-    }
-    val distSamples = Array.fill(10000) {
-      dist.sample
-    }
+    val tdSamples = Array.fill(10000) { td.samplePDF }
+    val distSamples = Array.fill(10000) { dist.sample }
     val kst = new org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest()
     val d = kst.kolmogorovSmirnovStatistic(tdSamples, distSamples)
     val pass = d <= maxD
@@ -67,12 +63,8 @@ class TDigestTest extends AsyncWordSpec with Matchers {
 
   def testSamplingPMF(td: TDigest, dist: IntegerDistribution): Boolean = {
     td.nclusters should be <= (td.maxDiscrete)
-    val tdSamples = Array.fill(10000) {
-      td.samplePMF
-    }
-    val distSamples = Array.fill(10000) {
-      dist.sample.toDouble
-    }
+    val tdSamples = Array.fill(10000) { td.samplePMF }
+    val distSamples = Array.fill(10000) { dist.sample.toDouble }
     val kst = new org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest()
     val d = kst.kolmogorovSmirnovStatistic(tdSamples, distSamples)
     val pass = d <= maxD
@@ -83,18 +75,14 @@ class TDigestTest extends AsyncWordSpec with Matchers {
   def testDistribution(dist: RealDistribution, stdv: Double): Boolean = {
     dist.reseedRandomGenerator(seed)
 
-    val td = TDigest.sketch(Iterator.fill(ss) {
-      dist.sample
-    }, delta = delta)
+    val td = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
 
     testTDvsDist(td, dist, stdv) && testSamplingPDF(td, dist)
   }
 
   def testMonotoneCDF(dist: RealDistribution): Boolean = {
     dist.reseedRandomGenerator(seed)
-    val td = TDigest.sketch(Iterator.fill(ss) {
-      dist.sample
-    }, delta = delta)
+    val td = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
     val (xmin, xmax) = (td.clusters.keyMin.get, td.clusters.keyMax.get)
     val step = (xmax - xmin) / 100000
     val t = (xmin to xmax by step).iterator.map(x => td.cdf(x)).sliding(2).map(w => w(1) - w(0)).min
@@ -105,9 +93,7 @@ class TDigestTest extends AsyncWordSpec with Matchers {
 
   def testMonotoneCDFI(dist: RealDistribution): Boolean = {
     dist.reseedRandomGenerator(seed)
-    val td = TDigest.sketch(Iterator.fill(ss) {
-      dist.sample
-    }, delta = delta)
+    val td = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
     val (xmin, xmax) = (0.0, 1.0)
     val step = (xmax - xmin) / 100000
     val t = (xmin to xmax by step).iterator.map(q => td.cdfInverse(q)).sliding(2).map(w => w(1) - w(0)).min
@@ -145,12 +131,8 @@ class TDigestTest extends AsyncWordSpec with Matchers {
       val dist = new NormalDistribution()
       dist.reseedRandomGenerator(seed)
 
-      val td1 = TDigest.sketch(Iterator.fill(ss) {
-        dist.sample
-      }, delta = delta)
-      val td2 = TDigest.sketch(Iterator.fill(ss) {
-        dist.sample
-      }, delta = delta)
+    val td1 = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
+    val td2 = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
 
       testTDvsDist(td1 ++ td2, dist, math.sqrt(dist.getNumericalVariance())) should be(true)
     }
@@ -185,9 +167,7 @@ class TDigestTest extends AsyncWordSpec with Matchers {
     "respect maxDiscrete parameter over ++" in {
       import org.apache.commons.math3.distribution.GeometricDistribution
       val gd = new GeometricDistribution(0.33)
-      val tdvec = Vector.fill(10) {
-        TDigest.sketch(gd.sample(100000), maxDiscrete = 50)
-      }
+    val tdvec = Vector.fill(10) { TDigest.sketch(gd.sample(100000), maxDiscrete = 50) }
       val td = tdvec.reduce(_ ++ _)
       val clust = td.clusters
       clust.keys.map(_.toInt).map(_.toDouble) should beEqSeq(clust.keys)
@@ -207,9 +187,7 @@ class TDigestTest extends AsyncWordSpec with Matchers {
       val dist = new NormalDistribution()
       dist.reseedRandomGenerator(seed)
 
-      val tdo = TDigest.sketch(Iterator.fill(ss) {
-        dist.sample
-      }, delta = delta)
+    val tdo = TDigest.sketch(Iterator.fill(ss) { dist.sample }, delta = delta)
 
       val tdi = roundTripSerDe(tdo)
 
