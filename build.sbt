@@ -20,9 +20,9 @@ limitations under the License.
 // publish isarn-sketches-java for exactly one scala version:
 // sbt isarn_sketches_java/publish
 
-scalaVersion := "2.12.13"
+scalaVersion := "2.12.14"
 
-crossScalaVersions := Seq("2.11.12", "2.12.13")
+crossScalaVersions := Seq("2.11.12", "2.12.14")
 
 // these do not "inherit" when defined at top level, so
 // define them here for inclusion in each subproject.
@@ -67,36 +67,36 @@ javacOptions ++= Seq()
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 
-//scalacOptions in (Compile, doc) ++= Seq("-doc-root-content", baseDirectory.value+"/root-doc.txt")
+scalacOptions in (Compile, doc) ++= Seq("-doc-root-content", baseDirectory.value+"/root-doc.txt")
 
-//enablePlugins(ScalaUnidocPlugin, JavaUnidocPlugin, GhpagesPlugin)
+enablePlugins(ScalaUnidocPlugin, JavaUnidocPlugin, GhpagesPlugin)
 
 git.remoteRepo := "git@github.com:isarn/isarn-sketches.git"
 
-//siteSubdirName in ScalaUnidoc := "scala/api"
+siteSubdirName in ScalaUnidoc := "scala/api"
 
-//siteSubdirName in JavaUnidoc := "java/api"
+siteSubdirName in JavaUnidoc := "java/api"
 
-//addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)
+addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc)
 
-//addMappingsToSiteDir(mappings in (JavaUnidoc, packageDoc), siteSubdirName in JavaUnidoc)
+addMappingsToSiteDir(mappings in (JavaUnidoc, packageDoc), siteSubdirName in JavaUnidoc)
 
 // tell unidoc to not do scala-doc for the isarn-sketches-java (javadoc will still get created)
-//unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(isarn_sketches_java)
+unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(isarn_sketches_java)
 
 // this target needs to execute only once, at the top level
 // turn it off for any sub-projects
-//def siteSubProjectSettings = Seq(
-//  previewSite := {}
-//)
+def siteSubProjectSettings = Seq(
+  previewSite := {}
+)
 
 // browser insisted on caching some older generated site at the default (4000)
-//previewFixedPort := Some(4444)
+previewFixedPort := Some(4444)
 
 lazy val isarn_sketches_java = (project in file("isarn-sketches-java"))
   .settings(name := "isarn-sketches-java")
   //.enablePlugins(GenJavadocPlugin, PublishJavadocPlugin)
-  //.settings(siteSubProjectSettings :_*)
+  .settings(siteSubProjectSettings :_*)
   .settings(
     crossPaths := false,                            // drop off Scala suffix from artifact names
     autoScalaLibrary := false                       // exclude scala-library from dependencies
@@ -117,4 +117,4 @@ lazy val isarn_sketches = (project in file("."))
       "org.scalatest" %% "scalatest" % "3.2.5" % Test,
       "org.apache.commons" % "commons-math3" % "3.6.1" % Test)
       )
-  //.settings(publishSettings :_*)
+  .settings(publishSettings :_*)
